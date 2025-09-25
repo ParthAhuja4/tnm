@@ -10,13 +10,13 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
     proxy: {
-      '/api': {
-        target: 'http://localhost:8000',
+      "/api": {
+        target: "http://thenightmarketer.com",
         changeOrigin: true,
-        secure: false,
-      }
-    }
-  }
+        secure: true,
+        rewrite: (path) => path.replace(/^\/api/, "/api"),
+      },
+    },
+  },
 })

@@ -1,304 +1,310 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
-import { api } from '@/services/api';
-import { formatCurrency } from '@/lib/utils';
+import ResultsChart from '../../components/analytics/ResultsChart'
+import ROASChart from '../../components/analytics/ROASChart'
+import CostPerPurchaseChart from '../../components/analytics/CostPerPurchaseChart'
+import SpendVsConversionChart from '../../components/analytics/SpendVsConversionChart'
+import ReachImpressionsChart from '../../components/analytics/ReachImpressionsChart'
+import ConversionFunnelChart from '../../components/analytics/ConversionFunnelChart'
+import TimelineChart from '../../components/analytics/TimelineChart'
 
-type AnalyticsData = {
-  overview: {
-    totalSpend: number;
-    totalImpressions: number;
-    totalClicks: number;
-    ctr: number;
-    cpc: number;
-    cpm: number;
-  };
-  performanceOverTime: Array<{
-    date: string;
-    spend: number;
-    impressions: number;
-    clicks: number;
-    conversions: number;
-  }>;
-  campaignPerformance: Array<{
-    id: number;
-    name: string;
-    spend: number;
-    impressions: number;
-    clicks: number;
-    conversions: number;
-    ctr: number;
-    cpc: number;
-  }>;
-  deviceBreakdown: Array<{
-    device: string;
-    value: number;
-  }>;
-  geoPerformance: Array<{
-    country: string;
-    spend: number;
-    impressions: number;
-    clicks: number;
-  }>;
-};
+import { useState, useEffect, type ComponentType } from 'react'
+import MonthSelector from '../../components/analytics/MonthSelector'
+import SummaryMetrics from '../../components/analytics/SummaryMetrics'
 
-const COLORS = ['#4F46E5', '#60A5FA', '#F59E0B', '#10B981', '#EF4444', '#8B5CF6'];
+import { initializeCampaignData, getMonthlyAggregates, type MonthlyAggregate } from '../../services/campaignData'
+import { Sparkles, BarChart3, Zap, Target } from 'lucide-react'
 
-export const AnalyticsPage: React.FC = () => {
-  const { data, isLoading } = useQuery<AnalyticsData>({
-    queryKey: ['analytics'],
-    queryFn: async () => {
-      const response = await api.get('/api/analytics');
-      return response.data;
-    },
-  });
+const CHART_COUNT = 7
 
-  if (isLoading || !data) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
-      </div>
-    );
+type HighlightItem = {
+  title: string
+  description: string
+  icon: ComponentType<{ className?: string }>
+}
+
+const HIGHLIGHT_ITEMS: HighlightItem[] = [
+  {
+    title: 'Interactive calendar',
+    description: 'Pick any two months and instantly refresh the data view.',
+    icon: Sparkles,
+  },
+  {
+    title: 'Performance focus',
+    description: 'Every chart spans the full width for clarity and deeper insight.',
+    icon: BarChart3,
+  },
+  {
+    title: 'Responsive feedback',
+    description: 'Selections update charts instantly without extra reloads.',
+    icon: Zap,
+  },
+  {
+    title: 'Goal tracking',
+    description: 'Trend badges and comparative metrics keep targets visible.',
+    icon: Target,
+  },
+]
+
+function AnalyticsPage() {
+  const [startMonth, setStartMonth] = useState('2025-08')
+  const [compareMonth, setCompareMonth] = useState('2025-07')
+  const [startData, setStartData] = useState<MonthlyAggregate | null>(null)
+  const [compareData, setCompareData] = useState<MonthlyAggregate | null>(null)
+  const [monthlyData, setMonthlyData] = useState<Record<string, MonthlyAggregate>>({})
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let isMounted = true
+
+    const loadData = async () => {
+      setLoading(true)
+      try {
+        const store = await initializeCampaignData()
+        if (!isMounted) return
+
+        setMonthlyData({ ...store.monthlyAggregates })
+        setStartData(store.monthlyAggregates[startMonth] ?? null)
+        setCompareData(store.monthlyAggregates[compareMonth] ?? null)
+      } catch (error) {
+        if (isMounted) {
+          console.error('Error loading data:', error)
+          setMonthlyData({})
+          setStartData(null)
+          setCompareData(null)
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
+      }
+    }
+
+    loadData()
+
+    return () => {
+      isMounted = false
+    }
+  }, [startMonth, compareMonth])
+
+  const handleMonthsChange = (newStartMonth: string, newCompareMonth: string) => {
+    setStartMonth(newStartMonth)
+    setCompareMonth(newCompareMonth)
+
+    const start = getMonthlyAggregates(newStartMonth)
+    const compare = getMonthlyAggregates(newCompareMonth)
+
+    setStartData(start)
+    setCompareData(compare)
   }
 
-  const { overview, performanceOverTime, campaignPerformance, deviceBreakdown, geoPerformance } = data;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="space-y-10">
+            <div className="h-32 rounded-3xl border border-slate-200 bg-white/90 shadow-sm animate-pulse" />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 8 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-36 rounded-3xl border border-slate-200 bg-white/90 shadow-sm animate-pulse"
+                />
+              ))}
+            </div>
+            <div className="flex flex-col gap-6">
+              {Array.from({ length: CHART_COUNT }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-64 rounded-3xl border border-slate-200 bg-white/90 shadow-sm animate-pulse"
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const formattedStartLabel = new Date(`${startMonth}-01`).toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  })
+  const formattedCompareLabel = new Date(`${compareMonth}-01`).toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  })
+  const totalMonths = Object.keys(monthlyData).length
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Spend</CardTitle>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              className="h-4 w-4 text-muted-foreground"
-            >
-              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(overview.totalSpend)}</div>
-            <p className="text-xs text-muted-foreground">Total ad spend</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Impressions</CardTitle>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              className="h-4 w-4 text-muted-foreground"
-            >
-              <path d="M2 12s3-7.5 10-7.5 10 7.5 10 7.5-3 7.5-10 7.5S2 12 2 12Z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{overview.totalImpressions.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Total impressions</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Click-Through Rate</CardTitle>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              className="h-4 w-4 text-muted-foreground"
-            >
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-            </svg>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{(overview.ctr * 100).toFixed(2)}%</div>
-            <p className="text-xs text-muted-foreground">Average CTR</p>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <Tabs defaultValue="performance" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="performance">Performance Over Time</TabsTrigger>
-          <TabsTrigger value="campaigns">Campaign Performance</TabsTrigger>
-          <TabsTrigger value="devices">Device Breakdown</TabsTrigger>
-          <TabsTrigger value="geo">Geo Performance</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="performance" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Performance Over Time</CardTitle>
-            </CardHeader>
-            <CardContent className="pl-2">
-              <div className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={performanceOverTime}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis yAxisId="left" orientation="left" stroke="#4F46E5" />
-                    <YAxis yAxisId="right" orientation="right" stroke="#10B981" />
-                    <Tooltip />
-                    <Legend />
-                    <Line yAxisId="left" type="monotone" dataKey="spend" stroke="#4F46E5" name="Spend" />
-                    <Line yAxisId="right" type="monotone" dataKey="impressions" stroke="#10B981" name="Impressions" />
-                    <Line yAxisId="right" type="monotone" dataKey="clicks" stroke="#F59E0B" name="Clicks" />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="campaigns" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Campaign Performance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[600px] overflow-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Campaign</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Spend</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Impressions</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Clicks</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">CTR</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">CPC</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {campaignPerformance.map((campaign) => (
-                      <tr key={campaign.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{campaign.name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{formatCurrency(campaign.spend)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{campaign.impressions.toLocaleString()}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{campaign.clicks.toLocaleString()}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{(campaign.ctr * 100).toFixed(2)}%</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{formatCurrency(campaign.cpc)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="devices" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Device Breakdown</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={deviceBreakdown}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {deviceBreakdown.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value) => [value, 'Impressions']} />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Device Performance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={deviceBreakdown}
-                      layout="vertical"
-                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" />
-                      <YAxis dataKey="device" type="category" />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="value" fill="#4F46E5" name="Impressions" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
+    <div className="min-h-screen bg-slate-50">
+      <header className="relative isolate overflow-hidden border-b border-slate-200 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_top,_rgba(20,184,166,0.25),transparent_55%)]"
+          aria-hidden="true"
+        />
+        <div className="relative mx-auto flex max-w-7xl flex-col gap-10 px-4 py-10 sm:px-6 lg:px-8 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-4">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-teal-100">
+              Live overview
+            </span>
+            <div className="space-y-3">
+              <h1 className="text-4xl font-semibold tracking-tight text-white">
+                Marketing Analytics Dashboard
+              </h1>
+              <p className="max-w-xl text-sm text-slate-200">
+                Complete campaign performance analysis with Shopify-style monthly comparisons and a refreshed single-column insight layout.
+              </p>
+            </div>
           </div>
-        </TabsContent>
-        
-        <TabsContent value="geo" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Geographic Performance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[500px] overflow-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Country</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Spend</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Impressions</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Clicks</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">CTR</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {geoPerformance.map((geo) => (
-                      <tr key={geo.country} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{geo.country}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{formatCurrency(geo.spend)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{geo.impressions.toLocaleString()}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{geo.clicks.toLocaleString()}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                          {geo.impressions > 0 ? ((geo.clicks / geo.impressions) * 100).toFixed(2) + '%' : 'N/A'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+
+          <dl className="grid w-full max-w-xl grid-cols-1 gap-4 text-sm font-medium text-slate-200 sm:grid-cols-2 md:max-w-none md:w-auto lg:grid-cols-3">
+            <div className="rounded-3xl border border-white/15 bg-white/10 px-5 py-4 shadow-lg shadow-black/10 backdrop-blur">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-teal-100/80">Months</dt>
+              <dd className="mt-2 text-2xl font-semibold text-white">{totalMonths}</dd>
+            </div>
+            <div className="rounded-3xl border border-white/15 bg-white/10 px-5 py-4 shadow-lg shadow-black/10 backdrop-blur">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-teal-100/80">Active charts</dt>
+              <dd className="mt-2 text-2xl font-semibold text-white">{CHART_COUNT}</dd>
+            </div>
+            <div className="rounded-3xl border border-white/15 bg-white/10 px-5 py-4 shadow-lg shadow-black/10 backdrop-blur">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-teal-100/80">Status</dt>
+              <dd className="mt-2 flex flex-col gap-2 text-sm">
+                <span className="inline-flex items-center gap-2 text-white">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-200 opacity-60" />
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-teal-300" />
+                  </span>
+                  Live now
+                </span>
+                <span className="inline-flex w-max items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-teal-100">
+                  Single column
+                </span>
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="space-y-12">
+          <section className="space-y-6">
+            <MonthSelector
+              startMonth={startMonth}
+              compareMonth={compareMonth}
+              onMonthsChange={handleMonthsChange}
+            />
+
+            <div className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
+              <div className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm ring-1 ring-slate-900/5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Current period</p>
+                <p className="mt-2 text-lg font-semibold text-slate-900">{formattedStartLabel}</p>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              <div className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm ring-1 ring-slate-900/5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Comparison period</p>
+                <p className="mt-2 text-lg font-semibold text-slate-900">{formattedCompareLabel}</p>
+              </div>
+              <div className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm ring-1 ring-slate-900/5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Charts per row</p>
+                <p className="mt-2 text-lg font-semibold text-slate-900">1</p>
+                <p className="mt-1 text-xs text-slate-500">Optimized for deep, single focus analysis.</p>
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-6">
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div className="space-y-2">
+                <h2 className="text-2xl font-semibold text-slate-900">Performance summary</h2>
+                <p className="text-sm text-slate-500">
+                  Comparing {formattedStartLabel} versus {formattedCompareLabel} across every core acquisition metric.
+                </p>
+              </div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-widest text-slate-500 shadow-sm">
+                <span className="h-1.5 w-1.5 rounded-full bg-teal-500" />
+                Updated metrics
+              </div>
+            </div>
+            <SummaryMetrics startData={startData} compareData={compareData} />
+          </section>
+
+          <section className="space-y-8">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div className="space-y-2">
+                <h2 className="text-2xl font-semibold text-slate-900">Campaign insights</h2>
+                <p className="text-sm text-slate-500">
+                  Seven focused visualizations, each rendered one-per-row for maximum clarity and scanability.
+                </p>
+              </div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-widest text-slate-500 shadow-sm">
+                <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                Single column mode
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-8">
+              <ResultsChart startMonth={startMonth} compareMonth={compareMonth} monthlyData={monthlyData} />
+              <ROASChart startMonth={startMonth} compareMonth={compareMonth} monthlyData={monthlyData} />
+              <CostPerPurchaseChart startMonth={startMonth} compareMonth={compareMonth} monthlyData={monthlyData} />
+              <SpendVsConversionChart startMonth={startMonth} compareMonth={compareMonth} monthlyData={monthlyData} />
+              <ReachImpressionsChart startMonth={startMonth} compareMonth={compareMonth} monthlyData={monthlyData} />
+              <ConversionFunnelChart startMonth={startMonth} compareMonth={compareMonth} monthlyData={monthlyData} />
+              <TimelineChart startMonth={startMonth} compareMonth={compareMonth} monthlyData={monthlyData} />
+            </div>
+          </section>
+
+          <section className="mt-6">
+            <div className="rounded-3xl border border-slate-200/80 bg-white/90 p-8 shadow-lg ring-1 ring-slate-900/5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-2">
+                  <h3 className="text-xl font-semibold text-slate-900">Dashboard highlights</h3>
+                  <p className="text-sm text-slate-500">
+                    A modernized layout that keeps insights discoverable while respecting campaign depth.
+                  </p>
+                </div>
+                <span className="inline-flex items-center gap-2 rounded-full bg-teal-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-teal-700">
+                  Layout refresh
+                </span>
+              </div>
+              <div className="mt-6 grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                {HIGHLIGHT_ITEMS.map(({ title, description, icon: Icon }) => (
+                  <div
+                    key={title}
+                    className="group flex items-start gap-4 rounded-2xl border border-slate-200/80 bg-white/95 p-5 shadow-sm ring-1 ring-slate-900/5 transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg"
+                  >
+                    <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500/15 via-sky-500/15 to-emerald-500/15 text-teal-600">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <div className="space-y-1.5">
+                      <p className="font-semibold text-slate-900">{title}</p>
+                      <p className="text-slate-600">{description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+
+      <footer className="mt-16 border-t border-slate-200 bg-white/90">
+        <div className="mx-auto max-w-7xl px-4 py-6 text-sm text-slate-500 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <p>
+              (c) 2025 Campaign Analytics Dashboard. Built with React, Tailwind CSS v4, Recharts, and Lucide Icons.
+            </p>
+            <div className="flex flex-col gap-2 text-slate-500 sm:flex-row sm:items-center sm:gap-4">
+              <span>Last updated: {new Date().toLocaleDateString()}</span>
+              <span className="inline-flex items-center gap-2">
+                <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-emerald-400" />
+                All {CHART_COUNT} charts active in single-column flow
+              </span>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
-  );
-};
+  )
+}
+
+export default AnalyticsPage
+
+

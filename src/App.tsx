@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import "./globals.css";
 import { ClientsPage } from "./pages/clients/ClientsPage.tsx";
+import AnalyticsPage  from "./pages/analytics/AnalyticsPage.tsx";
 
 function LoginForm() {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
@@ -440,7 +441,8 @@ function TabContent({ activeTab }: { activeTab: string }) {
       );
 
     case "analytics":
-      return (
+      return (<>
+      <AnalyticsPage></AnalyticsPage>
         <div className="space-y-8 my-12 lg:my-0">
           <div className="text-center space-y-4">
             <h2 className="text-4xl font-bold gradient-text">Analytics Hub</h2>
@@ -480,6 +482,7 @@ function TabContent({ activeTab }: { activeTab: string }) {
             </CardContent>
           </Card>
         </div>
+        </>
       );
 
     case "calendar":
