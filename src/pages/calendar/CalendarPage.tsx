@@ -1,5 +1,5 @@
-﻿import React, { useState } from "react";
-import { Calendar as CalendarIcon } from "lucide-react";
+import React, { useState } from "react";
+import { Calendar as CalendarIcon, X } from "lucide-react";
 import { Calendar } from "react-big-calendar";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -35,6 +35,12 @@ type Event = {
   assigned_to: string;
   created_at: string;
   updated_at: string;
+};
+
+type CalendarEvent = Event & {
+  title: string;
+  start: Date;
+  end: Date;
 };
 
 // Initial events data
@@ -80,12 +86,12 @@ const createDefaultEventForm = (): Event => ({
 const CalendarPage: React.FC = () => {
   const [events, setEvents] = useState<Event[]>(initialEvents);
   const [isModalOpen, setModalOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [eventForm, setEventForm] = useState<Event>(createDefaultEventForm());
   const [newComment, setNewComment] = useState<string>("");
+  const [isEditing, setIsEditing] = useState(false);
 
   const { getRootProps, getInputProps } = useDropzone({
-    accept: ["image/*", "video/*"], // Accept both image and video files
+    accept: { "image/*": [], "video/*": [] }, // Accept both image and video files
     onDrop: (acceptedFiles) => {
       if (acceptedFiles.length > 0) {
         const file = acceptedFiles[0];
@@ -103,12 +109,31 @@ const CalendarPage: React.FC = () => {
 
   // Handle date click to open form
   const handleDateClick = (date: Date) => {
-    setSelectedDate(date);
+    setIsEditing(false);
     setModalOpen(true);
-    setEventForm((prev) => ({
-      ...prev,
+    setNewComment("");
+    const baseForm = createDefaultEventForm();
+
+    setEventForm({
+      ...baseForm,
       event_date: format(date, "yyyy-MM-dd"), // Set event date when date is clicked
-    }));
+    });
+  };
+
+  const handleEditEvent = (eventId: number) => {
+    const eventToEdit = events.find((item) => item.event_id === eventId);
+
+    if (!eventToEdit) {
+      return;
+    }
+
+    setIsEditing(true);
+    setNewComment("");
+    setEventForm({
+      ...eventToEdit,
+      comments: [...eventToEdit.comments],
+    });
+    setModalOpen(true);
   };
 
   // Handle form field changes
@@ -119,25 +144,72 @@ const CalendarPage: React.FC = () => {
     }));
   };
 
-  // Add the comment automatically when the event is created
-  const handleAddEvent = () => {
-    const updatedEventForm = { ...eventForm };
-
-    // Add the comment to the event automatically if the comment field is populated
-    if (newComment.trim()) {
-      updatedEventForm.comments.push({ from: "Client", comment: newComment });
-    }
-
-    setEvents((previousEvents) => [
-      ...previousEvents,
-      { ...updatedEventForm, event_id: previousEvents.length + 1 },
-    ]);
+  const closeModal = () => {
     setModalOpen(false);
-    setEventForm(createDefaultEventForm()); // Reset form
-    setNewComment(""); // Clear comment input after submitting the event
+    setIsEditing(false);
+    setEventForm(createDefaultEventForm());
+    setNewComment("");
   };
 
+  // Persist the event and optionally append a new comment
+  const handleSubmitEvent = () => {
+    const timestamp = new Date().toISOString();
+    const trimmedComment = newComment.trim();
+    const updatedEvent: Event = {
+      ...eventForm,
+      comments: [...eventForm.comments],
+      updated_at: timestamp,
+    };
+
+    if (!isEditing) {
+      updatedEvent.created_at = timestamp;
+    }
+
+    if (trimmedComment) {
+      updatedEvent.comments = [
+        ...updatedEvent.comments,
+        { from: "Client", comment: trimmedComment },
+      ];
+    }
+
+    if (isEditing) {
+      setEvents((previousEvents) =>
+        previousEvents.map((existingEvent) =>
+          existingEvent.event_id === updatedEvent.event_id
+            ? updatedEvent
+            : existingEvent
+        )
+      );
+    } else {
+      setEvents((previousEvents) => {
+        const nextId =
+          previousEvents.length > 0
+            ? Math.max(...previousEvents.map((event) => event.event_id)) + 1
+            : 1;
+
+        return [
+          ...previousEvents,
+          { ...updatedEvent, event_id: nextId },
+        ];
+      });
+    }
+
+    closeModal();
+  };
+
+  const inputClassName = "w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-700 shadow-sm transition focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:opacity-60";
+
   // Render event cards
+  const calendarEvents = events.map(
+    (event) =>
+      ({
+        ...event,
+        title: event.event_name,
+        start: event.event_date ? new Date(event.event_date) : new Date(),
+        end: event.event_date ? new Date(event.event_date) : new Date(),
+      }) as CalendarEvent
+  );
+
   const renderEvent = (event: Event) => (
     <div
       key={event.event_id}
@@ -148,18 +220,27 @@ const CalendarPage: React.FC = () => {
           <h3 className="text-base font-semibold text-gray-900">
             {event.event_name}
           </h3>
-          <span
-            className={cn(
-              "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold",
-              event.status === "approved"
-                ? "bg-green-100 text-green-800"
-                : event.status === "disapproved"
-                  ? "bg-red-100 text-red-800"
-                  : "bg-blue-100 text-blue-800"
-            )}
-          >
-            {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
-          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleEditEvent(event.event_id)}
+            >
+              Edit
+            </Button>
+            <span
+              className={cn(
+                "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold",
+                event.status === "approved"
+                  ? "bg-green-100 text-green-800"
+                  : event.status === "disapproved"
+                    ? "bg-red-100 text-red-800"
+                    : "bg-blue-100 text-blue-800"
+              )}
+            >
+              {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+            </span>
+          </div>
         </div>
         <p className="text-sm font-medium text-indigo-600">
           {event.client_name}
@@ -226,16 +307,14 @@ const CalendarPage: React.FC = () => {
             <div className="h-[560px] overflow-hidden rounded-b-3xl text-black bg-white p-4 sm:p-6">
               <Calendar
                 localizer={localizer}
-                events={events.map((event) => ({
-                  ...event,
-                  title: event.event_name,
-                  start: new Date(event.event_date), // Using event date
-                  end: new Date(event.event_date), // Using event date
-                }))}
+                events={calendarEvents}
                 startAccessor="start"
                 endAccessor="end"
                 selectable
                 onSelectSlot={({ start }) => handleDateClick(start)} // Opens the form on date click
+                onSelectEvent={(calendarEvent) =>
+                  handleEditEvent((calendarEvent as CalendarEvent).event_id)
+                } // Opens the form on event click
                 style={{ height: "100%" }}
                 defaultView="month" // Only month view
                 views={["month"]} // Disabling week and day views
@@ -265,101 +344,134 @@ const CalendarPage: React.FC = () => {
 
       {/* Event Form Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-10 flex items-center justify-center bg-black bg-opacity-70">
-          <div
-            className="bg-white p-6 rounded-xl shadow-lg w-96 overflow-y-auto"
-            style={{ maxHeight: "80vh" }}
-          >
-            <h2 className="text-xl font-semibold mb-4">Add Event</h2>
-            <input
-              type="text"
-              placeholder="Event Name"
-              value={eventForm.event_name}
-              onChange={(e) => handleChange("event_name", e.target.value)}
-              className="w-full mb-4 p-2 border border-gray-300 rounded"
-            />
-            <input
-              type="text"
-              placeholder="Client Name"
-              value={eventForm.client_name}
-              onChange={(e) => handleChange("client_name", e.target.value)}
-              className="w-full mb-4 p-2 border border-gray-300 rounded"
-            />
-            <input
-              type="text"
-              placeholder="Assigned To"
-              value={eventForm.assigned_to}
-              onChange={(e) => handleChange("assigned_to", e.target.value)}
-              className="w-full mb-4 p-2 border border-gray-300 rounded"
-            />
-            <input
-              type="date"
-              value={eventForm.event_date}
-              onChange={(e) => handleChange("event_date", e.target.value)}
-              className="w-full mb-4 p-2 border border-gray-300 rounded"
-            />
-            <input
-              type="time"
-              value={eventForm.posting_time}
-              onChange={(e) => handleChange("posting_time", e.target.value)}
-              className="w-full mb-4 p-2 border border-gray-300 rounded"
-            />
-            {/* Dropzone for image/video upload */}
-            <div
-              {...getRootProps()}
-              className="mb-4 w-full p-2 border border-dashed border-gray-300 text-center"
-            >
-              <input {...getInputProps()} />
-              <p>Drag and drop an image or video, or click to select a file</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-sm px-4">
+          <div className="w-full max-w-xl overflow-hidden rounded-3xl border border-white/40 bg-white/95 shadow-2xl">
+            <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 px-6 py-5 text-white">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-semibold">
+                    {isEditing ? "Edit Event" : "Add Event"}
+                  </h2>
+                  <p className="mt-1 text-sm text-white/80">
+                    {isEditing
+                      ? "Update your event details and share the latest changes."
+                      : "Fill in the details to schedule a new event."}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="rounded-full bg-white/20 p-2 text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/40"
+                >
+                  <span className="sr-only">Close modal</span>
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
-            {eventForm.media_url && eventForm.media_type === "image" && (
-              <div className="mb-4">
-                <img
-                  src={eventForm.media_url}
-                  alt="Event Preview"
-                  className="w-32 h-32 object-cover rounded-lg"
+            <div className="max-h-[70vh] space-y-5 overflow-y-auto px-6 py-6">
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Event Name"
+                  value={eventForm.event_name}
+                  onChange={(e) => handleChange("event_name", e.target.value)}
+                  className={inputClassName}
                 />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <input
+                    type="text"
+                    placeholder="Client Name"
+                    value={eventForm.client_name}
+                    onChange={(e) => handleChange("client_name", e.target.value)}
+                    className={inputClassName}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Assigned To"
+                    value={eventForm.assigned_to}
+                    onChange={(e) => handleChange("assigned_to", e.target.value)}
+                    className={inputClassName}
+                  />
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <input
+                    type="date"
+                    value={eventForm.event_date}
+                    onChange={(e) => handleChange("event_date", e.target.value)}
+                    className={inputClassName}
+                  />
+                  <input
+                    type="time"
+                    value={eventForm.posting_time}
+                    onChange={(e) => handleChange("posting_time", e.target.value)}
+                    className={inputClassName}
+                  />
+                </div>
               </div>
-            )}
-            {eventForm.media_url && eventForm.media_type === "video" && (
-              <div className="mb-4">
-                <video width="150" height="150" controls className="rounded-lg">
-                  <source src={eventForm.media_url} type="video/mp4" />
-                </video>
+
+              <div
+                {...getRootProps()}
+                className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/60 px-4 py-6 text-center text-sm font-medium text-indigo-600 transition hover:border-indigo-400 hover:bg-indigo-50"
+              >
+                <input {...getInputProps()} />
+                <p>Drag & drop an image or video here</p>
+                <p className="text-xs text-indigo-400">or click to browse files from your device</p>
               </div>
-            )}
 
-            {/* Comment input */}
-            <textarea
-              placeholder="Add a comment"
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              className="w-full mb-4 p-2 border border-gray-300 rounded"
-            />
+              {eventForm.media_url && (
+                <div className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 p-4 shadow-inner">
+                  {eventForm.media_type === "image" ? (
+                    <img
+                      src={eventForm.media_url}
+                      alt="Event preview"
+                      className="mx-auto h-40 w-full max-w-sm rounded-xl object-cover shadow-sm"
+                    />
+                  ) : (
+                    <video
+                      controls
+                      className="mx-auto h-40 w-full max-w-sm rounded-xl shadow-sm"
+                    >
+                      <source src={eventForm.media_url} type="video/mp4" />
+                    </video>
+                  )}
+                </div>
+              )}
 
-            {/* Event Status Dropdown */}
-            <select
-              value={eventForm.status}
-              onChange={(e) => handleChange("status", e.target.value)}
-              className="w-full mb-4 p-2 border border-gray-300 rounded"
-            >
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="disapproved">Disapproved</option>
-            </select>
+              <textarea
+                placeholder="Add a comment"
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                className={[inputClassName, "min-h-[120px] resize-none"].join(" ")}
+              />
 
-            <Button
-              onClick={handleAddEvent}
-              className="w-full bg-blue-500 text-white p-2 rounded"
-            >
-              Add Event
-            </Button>
-            <Button
-              onClick={() => setModalOpen(false)}
-              className="w-full bg-red-500 text-white p-2 rounded mt-2"
-            >
-              Cancel
-            </Button>
+              <select
+                value={eventForm.status}
+                onChange={(e) => handleChange("status", e.target.value)}
+                className={inputClassName}
+              >
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="disapproved">Disapproved</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-3 border-t border-slate-100 bg-slate-50/60 px-6 py-5 sm:flex-row sm:items-center sm:justify-end">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={closeModal}
+                className="w-full sm:w-auto"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="gradient"
+                onClick={handleSubmitEvent}
+                className="w-full px-6 py-2.5 text-sm font-semibold shadow-lg sm:w-auto"
+              >
+                {isEditing ? "Save Changes" : "Add Event"}
+              </Button>
+            </div>
           </div>
         </div>
       )}
@@ -368,3 +480,4 @@ const CalendarPage: React.FC = () => {
 };
 
 export default CalendarPage;
+
