@@ -33,5 +33,22 @@
     {
       "path": "./tsconfig.node.json"
     }
+  ],
+  "exclude": [
+    "src/lib/analytics-utils.ts",
+    "src/lib/auth-utils.tsx",
+    "src/lib/chart-utils.ts",
+    "src/lib/date-utils.ts",
+    "src/lib/file-utils.tsx",
+    "src/lib/form-utils.tsx",
+    "src/lib/i18n.tsx",
+    "src/lib/notification-utils.ts",
+    "src/lib/storage-utils.ts",
+    "src/lib/theme-utils.tsx",
+    "src/lib/validation-schemas.ts",
+    "src/lib/viz-utils.tsx",
+    "src/lib/README.md",
+    "src/lib/ui-utils.ts"
   ]
 }
+

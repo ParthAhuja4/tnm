@@ -43,7 +43,7 @@ export const ClientsPage: React.FC = () => {
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userRole, setUserRole] = useState<UserRole>("admin");
-  const [currentUserId, setCurrentUserId] = useState<number | null>(1);
+  const [currentUserId] = useState<number | null>(1);
 
   // Add / Edit modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -295,3 +295,4 @@ export const ClientsPage: React.FC = () => {
     </div>
   );
 };
+

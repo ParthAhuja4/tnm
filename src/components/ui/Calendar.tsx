@@ -81,9 +81,29 @@ function Calendar({
       }}
       components={{
         Day: (dayProps) => {
-          const date = dayProps.date;
-          const dateStr = date?.toISOString().split('T')[0] || '';
-          const eventCount = eventDates.get(dateStr) || 0;
+          const normalizeDay = (value: typeof dayProps.day): Date => {
+            if (value instanceof Date) {
+              return value;
+            }
+
+            if (typeof value === 'string' || typeof value === 'number') {
+              return new Date(value);
+            }
+
+            if (value && typeof value === 'object' && 'date' in value) {
+              const maybeDate = (value as { date?: unknown }).date;
+              if (maybeDate instanceof Date) {
+                return maybeDate;
+              }
+            }
+
+            return new Date(NaN);
+          };
+
+          const date = normalizeDay(dayProps.day);
+          const isValidDate = !Number.isNaN(date.getTime());
+          const dateStr = isValidDate ? date.toISOString().split('T')[0] : '';
+          const eventCount = dateStr ? eventDates.get(dateStr) || 0 : 0;
           
           return (
             <div
@@ -96,7 +116,7 @@ function Calendar({
               onFocus={dayProps.onFocus}
             >
               <time dateTime={dateStr} className="block">
-                {date?.getDate()}
+                {isValidDate ? date.getDate() : ""}
               </time>
               {eventCount > 0 && (
                 <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex space-x-0.5">
@@ -122,3 +142,6 @@ function Calendar({
 Calendar.displayName = 'Calendar';
 
 export { Calendar };
+
+
+

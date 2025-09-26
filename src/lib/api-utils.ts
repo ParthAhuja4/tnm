@@ -58,7 +58,7 @@ export function handleApiError(
     if (axiosError.response) {
       // The request was made and the server responded with a status code
       // that falls out of the range of 2xx
-      const { status, data } = axiosError.response;
+      const { data } = axiosError.response;
       const message =
         (data as any)?.message || axiosError.message || defaultMessage;
 
@@ -190,3 +190,5 @@ export const apiUtils = {
   createMutationHandler,
   createQueryHandler,
 };
+
+

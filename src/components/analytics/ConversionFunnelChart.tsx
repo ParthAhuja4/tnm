@@ -1,5 +1,4 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import type { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent';
 import { Filter } from 'lucide-react';
 import { formatNumber, calculateGrowth, getMonthlyRawData } from '../../services/campaignData';
 import type { CampaignRecord, MonthlyAggregate } from '../../services/campaignData';
@@ -243,6 +242,7 @@ const ConversionFunnelChart = ({ startMonth, compareMonth, monthlyData }: Conver
 };
 
 export default ConversionFunnelChart;
+
 
 
 
