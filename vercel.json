@@ -1,8 +1,8 @@
-﻿{
+{
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "https://thenightmarketer.com/api/$1"
+      "source": "/api/:path*",
+      "destination": "https://thenightmarketer.com/api/:path*"
     }
   ]
 }
