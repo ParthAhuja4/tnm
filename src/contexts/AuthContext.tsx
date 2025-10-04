@@ -39,6 +39,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       );
 
       setUser(response.data.user);
+      setIsAuthenticated(true);
+      setIsLoading(false);
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("user", JSON.stringify(response.data.user));
       navigate("/");
@@ -52,13 +54,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       await api.post("/api/logout");
     } finally {
       setUser(null);
+      setIsAuthenticated(false);
+      setIsLoading(false);
       localStorage.removeItem("token");
       navigate("/login");
     }
   };
 
   const changeLoading = (boo: boolean) => {
-    setIsAuthenticated(boo);
+    setIsLoading(boo);
   };
 
   const userSet = (data: User | null) => {
@@ -66,7 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const changeAuthentication = (boo: boolean) => {
-    setIsLoading(boo);
+    setIsAuthenticated(boo);
   };
 
   return (
@@ -94,3 +98,4 @@ export const useAuth = () => {
   }
   return context;
 };
+

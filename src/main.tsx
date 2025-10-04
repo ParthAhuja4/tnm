@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { ThemeProvider } from "@/contexts/ThemeContext.tsx";
-import { ProvidersRoute } from "./components/ProvidersRoute";
+import { ProvidersRoute } from "./routers/ProvidersRoute";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "react-hot-toast";
 import {
@@ -12,14 +12,17 @@ import {
   Route,
 } from "react-router-dom";
 import { LoginPage } from "./pages/auth/LoginPage";
+import PublicRouter from "./routers/PublicRouter";
 
 const queryClient = new QueryClient();
 
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route element={<ProvidersRoute />}>
-      <Route path="/" element={<App />} />
-      <Route path="/login" element={<LoginPage />} />
+      <Route path="/" element={<PublicRouter />}>
+        <Route path="app" element={<App />} />
+        <Route path="login" element={<LoginPage />} />
+      </Route>
     </Route>
   )
 );
