@@ -69,6 +69,125 @@ function normalizeDate(value: unknown, defaultDate: string): string {
   return defaultDate;
 }
 
+function extractCampaignArray(payload: any): unknown[] {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (Array.isArray(payload?.data)) {
+    return payload.data;
+  }
+
+  if (Array.isArray(payload?.data?.data)) {
+    return payload.data.data;
+  }
+
+  if (Array.isArray(payload?.campaigns)) {
+    return payload.campaigns;
+  }
+
+  if (Array.isArray(payload?.data?.campaigns)) {
+    return payload.data.campaigns;
+  }
+
+  if (Array.isArray(payload?.data?.edges)) {
+    return payload.data.edges;
+  }
+
+  return [];
+}
+
+function ensureCampaignArray(payload: any): unknown[] {
+  const campaigns = extractCampaignArray(payload);
+
+  if (campaigns.length > 0 && campaigns.some(isPotentialCampaignRecord)) {
+    return campaigns;
+  }
+
+  const fallbackSources = [
+    payload?.data?.records,
+    payload?.records,
+    payload?.items,
+    payload?.data?.items,
+  ];
+
+  for (const candidate of fallbackSources) {
+    if (Array.isArray(candidate) && candidate.some(isPotentialCampaignRecord)) {
+      return candidate;
+    }
+  }
+
+  const deepMatch = findFirstObjectArray(payload);
+  if (deepMatch.length > 0 && deepMatch.some(isPotentialCampaignRecord)) {
+    return deepMatch;
+  }
+
+  return [];
+}
+
+function findFirstObjectArray(
+  input: unknown,
+  visited = new Set<unknown>()
+): unknown[] {
+  if (input === null || typeof input !== "object") {
+    return [];
+  }
+
+  if (visited.has(input)) {
+    return [];
+  }
+
+  visited.add(input);
+
+  if (Array.isArray(input)) {
+    const hasObjectEntries = input.some(
+      (item) => item !== null && typeof item === "object"
+    );
+
+    if (hasObjectEntries) {
+      return input;
+    }
+
+    for (const item of input) {
+      const result = findFirstObjectArray(item, visited);
+      if (result.length > 0) {
+        return result;
+      }
+    }
+
+    return [];
+  }
+
+  for (const value of Object.values(input as Record<string, unknown>)) {
+    const result = findFirstObjectArray(value, visited);
+    if (result.length > 0) {
+      return result;
+    }
+  }
+
+  return [];
+}
+
+function isPotentialCampaignRecord(value: unknown): boolean {
+  if (value === null || typeof value !== "object") {
+    return false;
+  }
+
+  const campaign = value as Record<string, unknown>;
+  const nameLike =
+    typeof campaign.campaignName === "string" ||
+    typeof campaign.campaign_name === "string" ||
+    typeof campaign.name === "string";
+
+  const idLike =
+    typeof campaign.campaignId === "string" ||
+    typeof campaign.campaign_id === "string" ||
+    typeof campaign.id === "string" ||
+    typeof campaign.id === "number";
+
+  return nameLike || idLike;
+}
+
 const FALLBACK_CAMPAIGN_DATA: CampaignRecord[] = [
   {
     campaignId: "CAMP-001",
@@ -173,6 +292,8 @@ let analyticsStore: AnalyticsStore = {
   monthlyAggregates: {},
 };
 let initializationPromise: Promise<AnalyticsStore> | null = null;
+let activeClientId: string | null = null;
+// Tracks which client the current analyticsStore belongs to.
 
 function normalizeCampaign(raw: any, index: number): CampaignRecord {
   const fallbackStart = `2025-08-${String(Math.min(28, index * 3 + 1)).padStart(
@@ -386,20 +507,20 @@ function buildAnalyticsStore(baseData: CampaignRecord[]): AnalyticsStore {
   return { monthlyRawData, monthlyAggregates };
 }
 
-async function fetchCampaignData(
-  resolvedClientId?: string
-): Promise<CampaignRecord[]> {
-  console.log(resolvedClientId);
+async function fetchCampaignData(clientId?: string): Promise<CampaignRecord[]> {
+  console.log(clientId);
+  let newClientId = JSON.parse(localStorage.getItem("user") || "null").id;
+
   try {
-    const response = await api.get(`/api/clients/C1009/data`);
-    if (response.status != 200) {
-      throw new Error(`Failed to fetch campaign data for client C1009`);
+    const response = await api.get(`/api/clients/${newClientId}/data`);
+    if (response.status !== 200) {
+      throw new Error(
+        `Failed to fetch campaign data for client ${newClientId}`
+      );
     }
 
     const payload = await response.data;
-    const campaigns: unknown[] = Array.isArray(payload?.data)
-      ? payload.data
-      : [];
+    const campaigns = ensureCampaignArray(payload);
 
     return campaigns.map((campaign, index) =>
       normalizeCampaign(campaign, index)
@@ -412,10 +533,17 @@ async function fetchCampaignData(
 
 async function fetchAnalyticsData(clientId?: string): Promise<AnalyticsStore> {
   const remoteData = await fetchCampaignData(clientId);
-  const baseData =
-    remoteData.length > 0
-      ? remoteData
-      : FALLBACK_CAMPAIGN_DATA.map((campaign) => ({ ...campaign }));
+  const shouldUseFallback = remoteData.length === 0 && !clientId;
+
+  if (remoteData.length === 0 && clientId) {
+    console.warn(
+      `No campaign records returned for client ${clientId}; using empty dataset.`
+    );
+  }
+
+  const baseData = shouldUseFallback
+    ? FALLBACK_CAMPAIGN_DATA.map((campaign) => ({ ...campaign }))
+    : remoteData;
 
   return buildAnalyticsStore(baseData);
 }
@@ -423,23 +551,35 @@ async function fetchAnalyticsData(clientId?: string): Promise<AnalyticsStore> {
 export async function initializeCampaignData(
   clientId?: string
 ): Promise<AnalyticsStore> {
+  const normalizedClientId = clientId?.trim();
+  const resolvedClientId =
+    normalizedClientId && normalizedClientId.length > 0
+      ? normalizedClientId
+      : null;
   const hasData = Object.keys(analyticsStore.monthlyAggregates).length > 0;
-  if (hasData) {
+  const isSameClient = activeClientId === resolvedClientId;
+
+  if (hasData && isSameClient && !initializationPromise) {
     return analyticsStore;
   }
 
-  if (!initializationPromise) {
-    initializationPromise = fetchAnalyticsData(clientId)
+  if (!initializationPromise || !isSameClient) {
+    const loadPromise = fetchAnalyticsData(resolvedClientId ?? undefined)
       .then((store) => {
         analyticsStore = store;
+        activeClientId = resolvedClientId;
         return analyticsStore;
       })
       .finally(() => {
-        initializationPromise = null;
+        if (initializationPromise === loadPromise) {
+          initializationPromise = null;
+        }
       });
+
+    initializationPromise = loadPromise;
   }
 
-  return initializationPromise;
+  return initializationPromise ?? analyticsStore;
 }
 
 export function getMonthlyAggregates(month: string): MonthlyAggregate | null {

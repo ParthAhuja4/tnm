@@ -18,7 +18,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/Dropdown";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 type Client = {
   id: number;
@@ -30,9 +36,30 @@ type Client = {
 };
 
 const sampleClients: Client[] = [
-  { id: 1, name: "Alice Johnson", email: "alice@example.com", status: "active", createdAt: "2023-09-01T10:00:00Z", totalSpend: 1200 },
-  { id: 2, name: "Bob Smith", email: "bob@example.com", status: "inactive", createdAt: "2023-08-15T12:30:00Z", totalSpend: 450 },
-  { id: 3, name: "Charlie Brown", email: "charlie@example.com", status: "active", createdAt: "2023-07-20T09:15:00Z", totalSpend: 980 },
+  {
+    id: 1,
+    name: "Alice Johnson",
+    email: "alice@example.com",
+    status: "active",
+    createdAt: "2023-09-01T10:00:00Z",
+    totalSpend: 1200,
+  },
+  {
+    id: 2,
+    name: "Bob Smith",
+    email: "bob@example.com",
+    status: "inactive",
+    createdAt: "2023-08-15T12:30:00Z",
+    totalSpend: 450,
+  },
+  {
+    id: 3,
+    name: "Charlie Brown",
+    email: "charlie@example.com",
+    status: "active",
+    createdAt: "2023-07-20T09:15:00Z",
+    totalSpend: 980,
+  },
 ];
 
 type UserRole = "admin" | "client";
@@ -68,7 +95,7 @@ export const ClientsPage: React.FC = () => {
   }, [userRole, currentUserId]);
 
   const deleteClient = (id: number) => {
-    setClients(prev => prev.filter(c => c.id !== id));
+    setClients((prev) => prev.filter((c) => c.id !== id));
     if (selectedClientId === id) setSelectedClientId(null);
   };
 
@@ -82,14 +109,14 @@ export const ClientsPage: React.FC = () => {
 
   const addClient = () => {
     const newClient: Client = {
-      id: Math.max(...clients.map(c => c.id)) + 1,
+      id: Math.max(...clients.map((c) => c.id)) + 1,
       name: formName,
       email: formEmail,
       status: formStatus,
       createdAt: new Date().toISOString(),
       totalSpend: 0,
     };
-    setClients(prev => [...prev, newClient]);
+    setClients((prev) => [...prev, newClient]);
     setIsAddModalOpen(false);
   };
 
@@ -103,19 +130,26 @@ export const ClientsPage: React.FC = () => {
 
   const saveEditClient = () => {
     if (formClientId === null) return;
-    setClients(prev =>
-      prev.map(c => (c.id === formClientId ? { ...c, name: formName, email: formEmail, status: formStatus } : c))
+    setClients((prev) =>
+      prev.map((c) =>
+        c.id === formClientId
+          ? { ...c, name: formName, email: formEmail, status: formStatus }
+          : c
+      )
     );
     setIsEditModalOpen(false);
   };
 
-  const filteredClients = clients.filter(c => {
+  const filteredClients = clients.filter((c) => {
     if (userRole === "client" && currentUserId) return c.id === currentUserId;
-    return c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.email.toLowerCase().includes(searchTerm.toLowerCase());
+    return (
+      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   });
 
   const displayedClients = selectedClientId
-    ? filteredClients.filter(c => c.id === selectedClientId)
+    ? filteredClients.filter((c) => c.id === selectedClientId)
     : filteredClients;
 
   const formatDate = (date: string) => new Date(date).toLocaleDateString();
@@ -131,7 +165,9 @@ export const ClientsPage: React.FC = () => {
   return (
     <div className="space-y-8 p-4">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-        <h2 className="text-3xl font-bold">Clients</h2>
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+          Clients
+        </h2>
 
         {/* Role Selector */}
         <DropdownMenu>
@@ -139,8 +175,12 @@ export const ClientsPage: React.FC = () => {
             <Button>Role: {userRole}</Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => setUserRole("admin")}>Admin</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setUserRole("client")}>Client</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setUserRole("admin")}>
+              Admin
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setUserRole("client")}>
+              Client
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -151,12 +191,17 @@ export const ClientsPage: React.FC = () => {
               <Button>Select Client</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              {clients.map(c => (
-                <DropdownMenuItem key={c.id} onClick={() => setSelectedClientId(c.id)}>
+              {clients.map((c) => (
+                <DropdownMenuItem
+                  key={c.id}
+                  onClick={() => setSelectedClientId(c.id)}
+                >
                   {c.name}
                 </DropdownMenuItem>
               ))}
-              <DropdownMenuItem onClick={() => setSelectedClientId(null)}>All Clients</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedClientId(null)}>
+                All Clients
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         )}
@@ -173,7 +218,7 @@ export const ClientsPage: React.FC = () => {
         <Input
           placeholder="Search clients..."
           value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
+          onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-sm"
           startAdornment={<Search className="h-4 w-4 text-gray-400" />}
         />
@@ -199,12 +244,17 @@ export const ClientsPage: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {displayedClients.map(c => (
-                <TableRow key={c.id} className="hover:bg-gray-100 cursor-pointer">
+              {displayedClients.map((c) => (
+                <TableRow
+                  key={c.id}
+                  className="hover:bg-gray-200 dark:hover:bg-gray-800 cursor-pointer"
+                >
                   <TableCell>{c.name}</TableCell>
                   <TableCell>{c.email}</TableCell>
                   <TableCell>
-                    <Badge variant={c.status === "active" ? "default" : "secondary"}>
+                    <Badge
+                      variant={c.status === "active" ? "default" : "secondary"}
+                    >
                       {c.status}
                     </Badge>
                   </TableCell>
@@ -219,8 +269,13 @@ export const ClientsPage: React.FC = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEditModal(c)}>Edit</DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600" onClick={() => deleteClient(c.id)}>
+                          <DropdownMenuItem onClick={() => openEditModal(c)}>
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={() => deleteClient(c.id)}
+                          >
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -231,7 +286,10 @@ export const ClientsPage: React.FC = () => {
               ))}
               {displayedClients.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={userRole === "admin" ? 6 : 5} className="text-center text-gray-500 py-6">
+                  <TableCell
+                    colSpan={userRole === "admin" ? 6 : 5}
+                    className="text-center text-gray-500 py-6"
+                  >
                     No clients found.
                   </TableCell>
                 </TableRow>
@@ -248,20 +306,34 @@ export const ClientsPage: React.FC = () => {
             <DialogTitle>Add New Client</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <Input placeholder="Name" value={formName} onChange={e => setFormName(e.target.value)} />
-            <Input placeholder="Email" value={formEmail} onChange={e => setFormEmail(e.target.value)} />
+            <Input
+              placeholder="Name"
+              value={formName}
+              onChange={(e) => setFormName(e.target.value)}
+            />
+            <Input
+              placeholder="Email"
+              value={formEmail}
+              onChange={(e) => setFormEmail(e.target.value)}
+            />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button>{formStatus}</Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => setFormStatus("active")}>Active</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setFormStatus("inactive")}>Inactive</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFormStatus("active")}>
+                  Active
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFormStatus("inactive")}>
+                  Inactive
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
           <DialogFooter className="mt-4 flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={addClient}>Add</Button>
           </DialogFooter>
         </DialogContent>
@@ -274,20 +346,34 @@ export const ClientsPage: React.FC = () => {
             <DialogTitle>Edit Client</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <Input placeholder="Name" value={formName} onChange={e => setFormName(e.target.value)} />
-            <Input placeholder="Email" value={formEmail} onChange={e => setFormEmail(e.target.value)} />
+            <Input
+              placeholder="Name"
+              value={formName}
+              onChange={(e) => setFormName(e.target.value)}
+            />
+            <Input
+              placeholder="Email"
+              value={formEmail}
+              onChange={(e) => setFormEmail(e.target.value)}
+            />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button>{formStatus}</Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => setFormStatus("active")}>Active</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setFormStatus("inactive")}>Inactive</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFormStatus("active")}>
+                  Active
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFormStatus("inactive")}>
+                  Inactive
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
           <DialogFooter className="mt-4 flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={saveEditClient}>Save</Button>
           </DialogFooter>
         </DialogContent>
@@ -295,4 +381,3 @@ export const ClientsPage: React.FC = () => {
     </div>
   );
 };
-

@@ -1,6 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import App from "./App";
+import App, { DashboardHome, AnalyticsRoute, UnderConstruction } from "./App";
+import CalendarPage from "@/pages/calendar/CalendarPage.tsx";
+import { ClientsPage } from "./pages/clients/ClientsPage.tsx";
 import { ThemeProvider } from "@/contexts/ThemeContext.tsx";
 import { ProvidersRoute } from "./routers/ProvidersRoute";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -10,17 +12,29 @@ import {
   createRoutesFromElements,
   RouterProvider,
   Route,
+  Navigate,
 } from "react-router-dom";
 import { LoginPage } from "./pages/auth/LoginPage";
-import PublicRouter from "./routers/PublicRouter";
+import PublicRouter, { RootRedirect } from "./routers/PublicRouter";
 
 const queryClient = new QueryClient();
 
 const router = createBrowserRouter(
   createRoutesFromElements(
-    <Route element={<ProvidersRoute />}>
-      <Route path="/" element={<PublicRouter />}>
-        <Route path="app" element={<App />} />
+    <Route path="/" element={<ProvidersRoute />}>
+      <Route element={<PublicRouter />}>
+        <Route index element={<RootRedirect />} />
+        <Route path="app" element={<App />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<DashboardHome />} />
+          <Route path="analytics" element={<AnalyticsRoute />} />
+          <Route path="calendar" element={<CalendarPage />} />
+          <Route path="clients" element={<ClientsPage />} />
+          <Route
+            path="settings"
+            element={<UnderConstruction section="settings" />}
+          />
+        </Route>
         <Route path="login" element={<LoginPage />} />
       </Route>
     </Route>

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-hot-toast";
@@ -20,6 +20,7 @@ import { Rocket } from "lucide-react";
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
+  role: z.string(), // Role should be a string, or null
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -33,14 +34,18 @@ export const LoginPage: React.FC = () => {
     register,
     handleSubmit,
     formState: { errors },
+    control,
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      role: "client",
+    },
   });
 
   const onSubmit = async (data: LoginFormData) => {
     try {
       setIsLoading(true);
-      await login(data.email, data.password);
+      await login(data.email, data.password, data.role);
       toast.success("Logged in successfully");
       navigate("/");
     } catch (error) {
@@ -49,6 +54,7 @@ export const LoginPage: React.FC = () => {
       setIsLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-teal-50 to-coral-50 dark:from-violet-950 dark:via-teal-950 dark:to-coral-950 flex items-center justify-center p-4">
@@ -93,6 +99,33 @@ export const LoginPage: React.FC = () => {
                 error={errors.password?.message}
                 className="h-12 bg-white/80 dark:bg-slate-800/80 border-2 border-violet-200 dark:border-violet-800 focus:border-violet-500 dark:focus:border-violet-400 rounded-lg"
                 placeholder="password"
+              />
+            </div>
+
+            {/* Checkbox with React Hook Form integration */}
+            <div className="space-y-2">
+              <Controller
+                name="role"
+                control={control}
+                render={({ field }) => (
+                  <div className="flex items-center gap-3 rounded-lg border border-violet-200 dark:border-violet-800 bg-white/80 dark:bg-slate-800/80 px-4 py-3">
+                    <input
+                      id="role"
+                      type="checkbox"
+                      checked={field.value === "admin"}
+                      onChange={(event) =>
+                        field.onChange(event.target.checked ? "admin" : "client")
+                      }
+                      className="h-5 w-5 rounded-md border-2 border-violet-300 dark:border-violet-700 bg-white/80 dark:bg-slate-900/50 text-violet-500 accent-violet-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2"
+                    />
+                    <Label
+                      htmlFor="role"
+                      className="text-sm font-semibold text-slate-700 dark:text-slate-200"
+                    >
+                      ADMIN
+                    </Label>
+                  </div>
+                )}
               />
             </div>
 

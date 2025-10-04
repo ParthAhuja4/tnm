@@ -1,100 +1,128 @@
-import ResultsChart from '../../components/analytics/ResultsChart'
-import ROASChart from '../../components/analytics/ROASChart'
-import CostPerPurchaseChart from '../../components/analytics/CostPerPurchaseChart'
-import SpendVsConversionChart from '../../components/analytics/SpendVsConversionChart'
-import ReachImpressionsChart from '../../components/analytics/ReachImpressionsChart'
-import ConversionFunnelChart from '../../components/analytics/ConversionFunnelChart'
-import TimelineChart from '../../components/analytics/TimelineChart'
+import ResultsChart from "../../components/analytics/ResultsChart";
+import ROASChart from "../../components/analytics/ROASChart";
+import CostPerPurchaseChart from "../../components/analytics/CostPerPurchaseChart";
+import SpendVsConversionChart from "../../components/analytics/SpendVsConversionChart";
+import ReachImpressionsChart from "../../components/analytics/ReachImpressionsChart";
+import ConversionFunnelChart from "../../components/analytics/ConversionFunnelChart";
+import TimelineChart from "../../components/analytics/TimelineChart";
 
-import { useState, useEffect, type ComponentType } from 'react'
-import MonthSelector from '../../components/analytics/MonthSelector'
-import SummaryMetrics from '../../components/analytics/SummaryMetrics'
+import { useState, useEffect, type ComponentType } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import MonthSelector from "../../components/analytics/MonthSelector";
+import SummaryMetrics from "../../components/analytics/SummaryMetrics";
 
-import { initializeCampaignData, getMonthlyAggregates, type MonthlyAggregate } from '../../services/campaignData'
-import { Sparkles, BarChart3, Zap, Target } from 'lucide-react'
+import {
+  initializeCampaignData,
+  getMonthlyAggregates,
+  type MonthlyAggregate,
+} from "../../services/campaignData";
+import { Sparkles, BarChart3, Zap, Target } from "lucide-react";
 
-const CHART_COUNT = 7
+const CHART_COUNT = 7;
 
 type HighlightItem = {
-  title: string
-  description: string
-  icon: ComponentType<{ className?: string }>
-}
+  title: string;
+  description: string;
+  icon: ComponentType<{ className?: string }>;
+};
 
 const HIGHLIGHT_ITEMS: HighlightItem[] = [
   {
-    title: 'Interactive calendar',
-    description: 'Pick any two months and instantly refresh the data view.',
+    title: "Interactive calendar",
+    description: "Pick any two months and instantly refresh the data view.",
     icon: Sparkles,
   },
   {
-    title: 'Performance focus',
-    description: 'Every chart spans the full width for clarity and deeper insight.',
+    title: "Performance focus",
+    description:
+      "Every chart spans the full width for clarity and deeper insight.",
     icon: BarChart3,
   },
   {
-    title: 'Responsive feedback',
-    description: 'Selections update charts instantly without extra reloads.',
+    title: "Responsive feedback",
+    description: "Selections update charts instantly without extra reloads.",
     icon: Zap,
   },
   {
-    title: 'Goal tracking',
-    description: 'Trend badges and comparative metrics keep targets visible.',
+    title: "Goal tracking",
+    description: "Trend badges and comparative metrics keep targets visible.",
     icon: Target,
   },
-]
+];
 
 function AnalyticsPage() {
-  const [startMonth, setStartMonth] = useState('2025-08')
-  const [compareMonth, setCompareMonth] = useState('2025-07')
-  const [startData, setStartData] = useState<MonthlyAggregate | null>(null)
-  const [compareData, setCompareData] = useState<MonthlyAggregate | null>(null)
-  const [monthlyData, setMonthlyData] = useState<Record<string, MonthlyAggregate>>({})
-  const [loading, setLoading] = useState(true)
+  const { user } = useAuth();
+  const isClient = user?.role === "client";
+  const authenticatedClientId =
+    isClient && user?.id !== undefined && user?.id !== null
+      ? String(user.id)
+      : undefined;
+
+  const [startMonth, setStartMonth] = useState("2025-08");
+  const [compareMonth, setCompareMonth] = useState("2025-07");
+  const [startData, setStartData] = useState<MonthlyAggregate | null>(null);
+  const [compareData, setCompareData] = useState<MonthlyAggregate | null>(null);
+  const [monthlyData, setMonthlyData] = useState<
+    Record<string, MonthlyAggregate>
+  >({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let isMounted = true
+    let isMounted = true;
 
     const loadData = async () => {
-      setLoading(true)
-      try {
-        const store = await initializeCampaignData()
-        if (!isMounted) return
+      if (isClient && !authenticatedClientId) {
+        if (isMounted) {
+          setLoading(false);
+        }
+        console.warn(
+          "Skipping analytics fetch: missing authenticated client id"
+        );
+        return;
+      }
 
-        setMonthlyData({ ...store.monthlyAggregates })
-        setStartData(store.monthlyAggregates[startMonth] ?? null)
-        setCompareData(store.monthlyAggregates[compareMonth] ?? null)
+      setLoading(true);
+      try {
+        const store = await initializeCampaignData(authenticatedClientId);
+        if (!isMounted) return;
+
+        setMonthlyData({ ...store.monthlyAggregates });
+        setStartData(store.monthlyAggregates[startMonth] ?? null);
+        setCompareData(store.monthlyAggregates[compareMonth] ?? null);
       } catch (error) {
         if (isMounted) {
-          console.error('Error loading data:', error)
-          setMonthlyData({})
-          setStartData(null)
-          setCompareData(null)
+          console.error("Error loading data:", error);
+          setMonthlyData({});
+          setStartData(null);
+          setCompareData(null);
         }
       } finally {
         if (isMounted) {
-          setLoading(false)
+          setLoading(false);
         }
       }
-    }
+    };
 
-    loadData()
+    loadData();
 
     return () => {
-      isMounted = false
-    }
-  }, [startMonth, compareMonth])
+      isMounted = false;
+    };
+  }, [startMonth, compareMonth, authenticatedClientId, isClient]);
 
-  const handleMonthsChange = (newStartMonth: string, newCompareMonth: string) => {
-    setStartMonth(newStartMonth)
-    setCompareMonth(newCompareMonth)
+  const handleMonthsChange = (
+    newStartMonth: string,
+    newCompareMonth: string
+  ) => {
+    setStartMonth(newStartMonth);
+    setCompareMonth(newCompareMonth);
 
-    const start = getMonthlyAggregates(newStartMonth)
-    const compare = getMonthlyAggregates(newCompareMonth)
+    const start = getMonthlyAggregates(newStartMonth);
+    const compare = getMonthlyAggregates(newCompareMonth);
 
-    setStartData(start)
-    setCompareData(compare)
-  }
+    setStartData(start);
+    setCompareData(compare);
+  };
 
   if (loading) {
     return (
@@ -121,18 +149,23 @@ function AnalyticsPage() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
-  const formattedStartLabel = new Date(`${startMonth}-01`).toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric',
-  })
-  const formattedCompareLabel = new Date(`${compareMonth}-01`).toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric',
-  })
-  const totalMonths = Object.keys(monthlyData).length
+  const formattedStartLabel = new Date(`${startMonth}-01`).toLocaleDateString(
+    "en-US",
+    {
+      month: "long",
+      year: "numeric",
+    }
+  );
+  const formattedCompareLabel = new Date(
+    `${compareMonth}-01`
+  ).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+  const totalMonths = Object.keys(monthlyData).length;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -151,22 +184,34 @@ function AnalyticsPage() {
                 Marketing Analytics Dashboard
               </h1>
               <p className="max-w-xl text-sm text-slate-200">
-                Complete campaign performance analysis with Shopify-style monthly comparisons and a refreshed single-column insight layout.
+                Complete campaign performance analysis with Shopify-style
+                monthly comparisons and a refreshed single-column insight
+                layout.
               </p>
             </div>
           </div>
 
           <dl className="grid w-full max-w-xl grid-cols-1 gap-4 text-sm font-medium text-slate-200 sm:grid-cols-2 md:max-w-none md:w-auto lg:grid-cols-3">
             <div className="rounded-3xl border border-white/15 bg-white/10 px-5 py-4 shadow-lg shadow-black/10 backdrop-blur">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-teal-100/80">Months</dt>
-              <dd className="mt-2 text-2xl font-semibold text-white">{totalMonths}</dd>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-teal-100/80">
+                Months
+              </dt>
+              <dd className="mt-2 text-2xl font-semibold text-white">
+                {totalMonths}
+              </dd>
             </div>
             <div className="rounded-3xl border border-white/15 bg-white/10 px-5 py-4 shadow-lg shadow-black/10 backdrop-blur">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-teal-100/80">Active charts</dt>
-              <dd className="mt-2 text-2xl font-semibold text-white">{CHART_COUNT}</dd>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-teal-100/80">
+                Active charts
+              </dt>
+              <dd className="mt-2 text-2xl font-semibold text-white">
+                {CHART_COUNT}
+              </dd>
             </div>
             <div className="rounded-3xl border border-white/15 bg-white/10 px-5 py-4 shadow-lg shadow-black/10 backdrop-blur">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-teal-100/80">Status</dt>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-teal-100/80">
+                Status
+              </dt>
               <dd className="mt-2 flex flex-col gap-2 text-sm">
                 <span className="inline-flex items-center gap-2 text-white">
                   <span className="relative flex h-2.5 w-2.5">
@@ -195,17 +240,29 @@ function AnalyticsPage() {
 
             <div className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
               <div className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm ring-1 ring-slate-900/5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Current period</p>
-                <p className="mt-2 text-lg font-semibold text-slate-900">{formattedStartLabel}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Current period
+                </p>
+                <p className="mt-2 text-lg font-semibold text-slate-900">
+                  {formattedStartLabel}
+                </p>
               </div>
               <div className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm ring-1 ring-slate-900/5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Comparison period</p>
-                <p className="mt-2 text-lg font-semibold text-slate-900">{formattedCompareLabel}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Comparison period
+                </p>
+                <p className="mt-2 text-lg font-semibold text-slate-900">
+                  {formattedCompareLabel}
+                </p>
               </div>
               <div className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm ring-1 ring-slate-900/5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Charts per row</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Charts per row
+                </p>
                 <p className="mt-2 text-lg font-semibold text-slate-900">1</p>
-                <p className="mt-1 text-xs text-slate-500">Optimized for deep, single focus analysis.</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Optimized for deep, single focus analysis.
+                </p>
               </div>
             </div>
           </section>
@@ -213,9 +270,12 @@ function AnalyticsPage() {
           <section className="space-y-6">
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div className="space-y-2">
-                <h2 className="text-2xl font-semibold text-slate-900">Performance summary</h2>
+                <h2 className="text-2xl font-semibold text-slate-900">
+                  Performance summary
+                </h2>
                 <p className="text-sm text-slate-500">
-                  Comparing {formattedStartLabel} versus {formattedCompareLabel} across every core acquisition metric.
+                  Comparing {formattedStartLabel} versus {formattedCompareLabel}{" "}
+                  across every core acquisition metric.
                 </p>
               </div>
               <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-widest text-slate-500 shadow-sm">
@@ -229,9 +289,12 @@ function AnalyticsPage() {
           <section className="space-y-8">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div className="space-y-2">
-                <h2 className="text-2xl font-semibold text-slate-900">Campaign insights</h2>
+                <h2 className="text-2xl font-semibold text-slate-900">
+                  Campaign insights
+                </h2>
                 <p className="text-sm text-slate-500">
-                  Seven focused visualizations, each rendered one-per-row for maximum clarity and scanability.
+                  Seven focused visualizations, each rendered one-per-row for
+                  maximum clarity and scanability.
                 </p>
               </div>
               <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-widest text-slate-500 shadow-sm">
@@ -241,13 +304,41 @@ function AnalyticsPage() {
             </div>
 
             <div className="flex flex-col gap-8">
-              <ResultsChart startMonth={startMonth} compareMonth={compareMonth} monthlyData={monthlyData} />
-              <ROASChart startMonth={startMonth} compareMonth={compareMonth} monthlyData={monthlyData} />
-              <CostPerPurchaseChart startMonth={startMonth} compareMonth={compareMonth} monthlyData={monthlyData} />
-              <SpendVsConversionChart startMonth={startMonth} compareMonth={compareMonth} monthlyData={monthlyData} />
-              <ReachImpressionsChart startMonth={startMonth} compareMonth={compareMonth} monthlyData={monthlyData} />
-              <ConversionFunnelChart startMonth={startMonth} compareMonth={compareMonth} monthlyData={monthlyData} />
-              <TimelineChart startMonth={startMonth} compareMonth={compareMonth} monthlyData={monthlyData} />
+              <ResultsChart
+                startMonth={startMonth}
+                compareMonth={compareMonth}
+                monthlyData={monthlyData}
+              />
+              <ROASChart
+                startMonth={startMonth}
+                compareMonth={compareMonth}
+                monthlyData={monthlyData}
+              />
+              <CostPerPurchaseChart
+                startMonth={startMonth}
+                compareMonth={compareMonth}
+                monthlyData={monthlyData}
+              />
+              <SpendVsConversionChart
+                startMonth={startMonth}
+                compareMonth={compareMonth}
+                monthlyData={monthlyData}
+              />
+              <ReachImpressionsChart
+                startMonth={startMonth}
+                compareMonth={compareMonth}
+                monthlyData={monthlyData}
+              />
+              <ConversionFunnelChart
+                startMonth={startMonth}
+                compareMonth={compareMonth}
+                monthlyData={monthlyData}
+              />
+              <TimelineChart
+                startMonth={startMonth}
+                compareMonth={compareMonth}
+                monthlyData={monthlyData}
+              />
             </div>
           </section>
 
@@ -255,9 +346,12 @@ function AnalyticsPage() {
             <div className="rounded-3xl border border-slate-200/80 bg-white/90 p-8 shadow-lg ring-1 ring-slate-900/5">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-2">
-                  <h3 className="text-xl font-semibold text-slate-900">Dashboard highlights</h3>
+                  <h3 className="text-xl font-semibold text-slate-900">
+                    Dashboard highlights
+                  </h3>
                   <p className="text-sm text-slate-500">
-                    A modernized layout that keeps insights discoverable while respecting campaign depth.
+                    A modernized layout that keeps insights discoverable while
+                    respecting campaign depth.
                   </p>
                 </div>
                 <span className="inline-flex items-center gap-2 rounded-full bg-teal-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-teal-700">
@@ -289,7 +383,8 @@ function AnalyticsPage() {
         <div className="mx-auto max-w-7xl px-4 py-6 text-sm text-slate-500 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <p>
-              (c) 2025 Campaign Analytics Dashboard. Built with React, Tailwind CSS v4, Recharts, and Lucide Icons.
+              (c) 2025 Campaign Analytics Dashboard. Built with React, Tailwind
+              CSS v4, Recharts, and Lucide Icons.
             </p>
             <div className="flex flex-col gap-2 text-slate-500 sm:flex-row sm:items-center sm:gap-4">
               <span>Last updated: {new Date().toLocaleDateString()}</span>
@@ -302,9 +397,7 @@ function AnalyticsPage() {
         </div>
       </footer>
     </div>
-  )
+  );
 }
 
-export default AnalyticsPage
-
-
+export default AnalyticsPage;

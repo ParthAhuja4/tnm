@@ -36,10 +36,6 @@ function PublicRouter() {
     return <div>Loading...</div>;
   }
 
-  if (location.pathname === "/") {
-    return <Navigate to={isAuthenticated ? "/app" : "/login"} replace />;
-  }
-
   if (!isAuthenticated && location.pathname !== "/login") {
     return <Navigate to="/login" replace />;
   }
@@ -51,4 +47,13 @@ function PublicRouter() {
   return <Outlet />;
 }
 
+export function RootRedirect() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  return <Navigate to={isAuthenticated ? "/app" : "/login"} replace />;
+}
 export default PublicRouter;

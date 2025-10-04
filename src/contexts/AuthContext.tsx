@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/services/api";
-
+import { initializeCampaignData } from "@/services/campaignData";
 export type User = {
-  id: number;
+  id: string | number;
   name: string;
   email: string;
   role: string;
@@ -12,7 +12,7 @@ export type User = {
 type AuthContextType = {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, role: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
   changeAuthentication: (boo: boolean) => void;
@@ -30,35 +30,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, role: string) => {
+    let obj: User | null = null;
+
     try {
       const response = await api.post(
-        "/api/admin/login",
+        `/api/${role}/login`,
         { email, password },
         { withCredentials: true }
       );
 
-      setUser(response.data.user);
+      if (role === "admin") {
+        const { id, name, email, role } = response.data.user;
+        obj = { id, name, email, role };
+      } else {
+        const { client_id, client_name, email, role } = response.data.user;
+        obj = { id: client_id, name: client_name, email, role };
+      }
+
+      // Move this OUTSIDE the role-specific blocks but INSIDE try block
+      const token = response.data.token;
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(obj));
+      setUser(obj);
       setIsAuthenticated(true);
       setIsLoading(false);
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("user", JSON.stringify(response.data.user));
-      navigate("/");
+
+      if (role === "client" && obj) {
+        const clientId = String(
+          JSON.parse(localStorage.getItem("user") || "null").id
+        );
+        console.log("Passing clientId:", clientId); // Debug log
+        initializeCampaignData(clientId).catch(console.error);
+      }
+
+      navigate("/app/dashboard");
     } catch (error) {
       throw new Error("Invalid credentials");
     }
   };
 
   const logout = async () => {
-    try {
-      await api.post("/api/logout");
-    } finally {
-      setUser(null);
-      setIsAuthenticated(false);
-      setIsLoading(false);
-      localStorage.removeItem("token");
-      navigate("/login");
-    }
+    setUser(null);
+    setIsAuthenticated(false);
+    setIsLoading(false);
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/login");
   };
 
   const changeLoading = (boo: boolean) => {
@@ -98,4 +116,3 @@ export const useAuth = () => {
   }
   return context;
 };
-
