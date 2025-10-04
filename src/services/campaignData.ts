@@ -1,3 +1,4 @@
+import { api } from "@/services/api";
 export interface CampaignRecord {
   campaignId: string;
   campaignName: string;
@@ -36,10 +37,10 @@ interface AnalyticsStore {
 }
 
 function toNumber(value: unknown, fallback = 0): number {
-  if (typeof value === 'number' && Number.isFinite(value)) {
+  if (typeof value === "number" && Number.isFinite(value)) {
     return value;
   }
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     const parsed = Number(value);
     if (Number.isFinite(parsed)) {
       return parsed;
@@ -57,7 +58,7 @@ function round(value: number, decimals = 2): number {
 }
 
 function normalizeDate(value: unknown, defaultDate: string): string {
-  if (typeof value === 'string' && value.trim()) {
+  if (typeof value === "string" && value.trim()) {
     return value.trim().slice(0, 10);
   }
 
@@ -70,8 +71,8 @@ function normalizeDate(value: unknown, defaultDate: string): string {
 
 const FALLBACK_CAMPAIGN_DATA: CampaignRecord[] = [
   {
-    campaignId: 'CAMP-001',
-    campaignName: 'Summer Savings Push',
+    campaignId: "CAMP-001",
+    campaignName: "Summer Savings Push",
     results: 1245,
     reach: 45230,
     impressions: 83512,
@@ -79,15 +80,15 @@ const FALLBACK_CAMPAIGN_DATA: CampaignRecord[] = [
     conversionValue: 37218.21,
     purchases: 195,
     addsToCart: 482,
-    reportingStarts: '2025-08-01',
-    reportingEnds: '2025-08-31',
+    reportingStarts: "2025-08-01",
+    reportingEnds: "2025-08-31",
     roas: round(37218.21 / 12450.75),
     costPerResult: round(12450.75 / 1245),
     costPerPurchase: round(12450.75 / 195),
   },
   {
-    campaignId: 'CAMP-002',
-    campaignName: 'New Arrivals Rollout',
+    campaignId: "CAMP-002",
+    campaignName: "New Arrivals Rollout",
     results: 985,
     reach: 39845,
     impressions: 70234,
@@ -95,15 +96,15 @@ const FALLBACK_CAMPAIGN_DATA: CampaignRecord[] = [
     conversionValue: 29560.87,
     purchases: 162,
     addsToCart: 421,
-    reportingStarts: '2025-08-03',
-    reportingEnds: '2025-08-27',
+    reportingStarts: "2025-08-03",
+    reportingEnds: "2025-08-27",
     roas: round(29560.87 / 10123.42),
     costPerResult: round(10123.42 / 985),
     costPerPurchase: round(10123.42 / 162),
   },
   {
-    campaignId: 'CAMP-003',
-    campaignName: 'Midnight Flash Sale',
+    campaignId: "CAMP-003",
+    campaignName: "Midnight Flash Sale",
     results: 1565,
     reach: 50210,
     impressions: 91203,
@@ -111,15 +112,15 @@ const FALLBACK_CAMPAIGN_DATA: CampaignRecord[] = [
     conversionValue: 41250.02,
     purchases: 238,
     addsToCart: 563,
-    reportingStarts: '2025-08-10',
-    reportingEnds: '2025-08-31',
+    reportingStarts: "2025-08-10",
+    reportingEnds: "2025-08-31",
     roas: round(41250.02 / 14325.65),
     costPerResult: round(14325.65 / 1565),
     costPerPurchase: round(14325.65 / 238),
   },
   {
-    campaignId: 'CAMP-004',
-    campaignName: 'Loyalty Program Boost',
+    campaignId: "CAMP-004",
+    campaignName: "Loyalty Program Boost",
     results: 845,
     reach: 32890,
     impressions: 61245,
@@ -127,15 +128,15 @@ const FALLBACK_CAMPAIGN_DATA: CampaignRecord[] = [
     conversionValue: 21563.44,
     purchases: 148,
     addsToCart: 356,
-    reportingStarts: '2025-08-05',
-    reportingEnds: '2025-08-29',
+    reportingStarts: "2025-08-05",
+    reportingEnds: "2025-08-29",
     roas: round(21563.44 / 8240.33),
     costPerResult: round(8240.33 / 845),
     costPerPurchase: round(8240.33 / 148),
   },
   {
-    campaignId: 'CAMP-005',
-    campaignName: 'Holiday Preview Teasers',
+    campaignId: "CAMP-005",
+    campaignName: "Holiday Preview Teasers",
     results: 1322,
     reach: 47215,
     impressions: 86780,
@@ -143,15 +144,15 @@ const FALLBACK_CAMPAIGN_DATA: CampaignRecord[] = [
     conversionValue: 40512.3,
     purchases: 214,
     addsToCart: 512,
-    reportingStarts: '2025-08-12',
-    reportingEnds: '2025-08-31',
+    reportingStarts: "2025-08-12",
+    reportingEnds: "2025-08-31",
     roas: round(40512.3 / 13510.22),
     costPerResult: round(13510.22 / 1322),
     costPerPurchase: round(13510.22 / 214),
   },
   {
-    campaignId: 'CAMP-006',
-    campaignName: 'Remarketing Revival',
+    campaignId: "CAMP-006",
+    campaignName: "Remarketing Revival",
     results: 918,
     reach: 30542,
     impressions: 58912,
@@ -159,20 +160,29 @@ const FALLBACK_CAMPAIGN_DATA: CampaignRecord[] = [
     conversionValue: 18234.56,
     purchases: 137,
     addsToCart: 298,
-    reportingStarts: '2025-08-07',
-    reportingEnds: '2025-08-23',
+    reportingStarts: "2025-08-07",
+    reportingEnds: "2025-08-23",
     roas: round(18234.56 / 7654.11),
     costPerResult: round(7654.11 / 918),
     costPerPurchase: round(7654.11 / 137),
   },
 ];
 
-let analyticsStore: AnalyticsStore = { monthlyRawData: {}, monthlyAggregates: {} };
+let analyticsStore: AnalyticsStore = {
+  monthlyRawData: {},
+  monthlyAggregates: {},
+};
 let initializationPromise: Promise<AnalyticsStore> | null = null;
 
 function normalizeCampaign(raw: any, index: number): CampaignRecord {
-  const fallbackStart = `2025-08-${String(Math.min(28, index * 3 + 1)).padStart(2, '0')}`;
-  const fallbackEnd = `2025-08-${String(Math.min(28, index * 3 + 3)).padStart(2, '0')}`;
+  const fallbackStart = `2025-08-${String(Math.min(28, index * 3 + 1)).padStart(
+    2,
+    "0"
+  )}`;
+  const fallbackEnd = `2025-08-${String(Math.min(28, index * 3 + 3)).padStart(
+    2,
+    "0"
+  )}`;
 
   const amountSpent = toNumber(raw?.amountSpent ?? raw?.amount_spent);
   const conversionValue = toNumber(
@@ -183,14 +193,26 @@ function normalizeCampaign(raw: any, index: number): CampaignRecord {
       raw?.revenue
   );
 
-  const results = Math.max(0, Math.round(toNumber(raw?.results ?? raw?.result)));
+  const results = Math.max(
+    0,
+    Math.round(toNumber(raw?.results ?? raw?.result))
+  );
   const reach = Math.max(0, Math.round(toNumber(raw?.reach)));
   const impressions = Math.max(0, Math.round(toNumber(raw?.impressions)));
-  const purchases = Math.max(0, Math.round(toNumber(raw?.purchases ?? raw?.purchase)));
-  const addsToCart = Math.max(0, Math.round(toNumber(raw?.addsToCart ?? raw?.adds_to_cart ?? raw?.addToCart)));
+  const purchases = Math.max(
+    0,
+    Math.round(toNumber(raw?.purchases ?? raw?.purchase))
+  );
+  const addsToCart = Math.max(
+    0,
+    Math.round(toNumber(raw?.addsToCart ?? raw?.adds_to_cart ?? raw?.addToCart))
+  );
 
   const reportingStarts = normalizeDate(
-    raw?.reportingStarts ?? raw?.reporting_starts ?? raw?.startDate ?? raw?.start_date,
+    raw?.reportingStarts ??
+      raw?.reporting_starts ??
+      raw?.startDate ??
+      raw?.start_date,
     fallbackStart
   );
   const reportingEnds = normalizeDate(
@@ -198,23 +220,30 @@ function normalizeCampaign(raw: any, index: number): CampaignRecord {
     fallbackEnd
   );
 
-  const roas = amountSpent > 0 ? round(conversionValue / amountSpent) : round(toNumber(raw?.roas));
+  const roas =
+    amountSpent > 0
+      ? round(conversionValue / amountSpent)
+      : round(toNumber(raw?.roas));
   const costPerResult =
-    results > 0 ? round(amountSpent / results) : round(toNumber(raw?.costPerResult ?? raw?.cost_per_result));
+    results > 0
+      ? round(amountSpent / results)
+      : round(toNumber(raw?.costPerResult ?? raw?.cost_per_result));
   const costPerPurchase =
     purchases > 0
       ? round(amountSpent / purchases)
       : round(toNumber(raw?.costPerPurchase ?? raw?.cost_per_purchase));
 
   const campaignId =
-    typeof raw?.campaignId === 'string' && raw.campaignId.trim().length > 0
+    typeof raw?.campaignId === "string" && raw.campaignId.trim().length > 0
       ? raw.campaignId.trim()
       : `campaign-${index + 1}`;
 
   const campaignName =
-    typeof raw?.campaignName === 'string' && raw.campaignName.trim().length > 0
+    typeof raw?.campaignName === "string" && raw.campaignName.trim().length > 0
       ? raw.campaignName.trim()
-      : (typeof raw?.name === 'string' && raw.name.trim().length > 0 ? raw.name.trim() : `Campaign ${index + 1}`);
+      : typeof raw?.name === "string" && raw.name.trim().length > 0
+      ? raw.name.trim()
+      : `Campaign ${index + 1}`;
 
   return {
     campaignId,
@@ -251,19 +280,38 @@ function createEmptyAggregate(): MonthlyAggregate {
   };
 }
 
-function calculateDerivedMetrics(aggregated: MonthlyAggregate): MonthlyAggregate {
+function calculateDerivedMetrics(
+  aggregated: MonthlyAggregate
+): MonthlyAggregate {
   const derived: MonthlyAggregate = { ...aggregated };
 
-  derived.avgROAS = aggregated.amountSpent > 0 ? round(aggregated.conversionValue / aggregated.amountSpent) : 0;
-  derived.conversionRate = aggregated.reach > 0 ? round((aggregated.purchases / aggregated.reach) * 100) : 0;
-  derived.costPerPurchase = aggregated.purchases > 0 ? round(aggregated.amountSpent / aggregated.purchases) : 0;
-  derived.ctr = aggregated.impressions > 0 ? round((aggregated.results / aggregated.impressions) * 100) : 0;
-  derived.cpm = aggregated.impressions > 0 ? round((aggregated.amountSpent / aggregated.impressions) * 1000) : 0;
+  derived.avgROAS =
+    aggregated.amountSpent > 0
+      ? round(aggregated.conversionValue / aggregated.amountSpent)
+      : 0;
+  derived.conversionRate =
+    aggregated.reach > 0
+      ? round((aggregated.purchases / aggregated.reach) * 100)
+      : 0;
+  derived.costPerPurchase =
+    aggregated.purchases > 0
+      ? round(aggregated.amountSpent / aggregated.purchases)
+      : 0;
+  derived.ctr =
+    aggregated.impressions > 0
+      ? round((aggregated.results / aggregated.impressions) * 100)
+      : 0;
+  derived.cpm =
+    aggregated.impressions > 0
+      ? round((aggregated.amountSpent / aggregated.impressions) * 1000)
+      : 0;
 
   return derived;
 }
 
-function aggregateMonthlyData(campaignData: CampaignRecord[]): MonthlyAggregate {
+function aggregateMonthlyData(
+  campaignData: CampaignRecord[]
+): MonthlyAggregate {
   const aggregated = campaignData.reduce<MonthlyAggregate>((acc, campaign) => {
     acc.results += campaign.results;
     acc.reach += campaign.reach;
@@ -278,18 +326,27 @@ function aggregateMonthlyData(campaignData: CampaignRecord[]): MonthlyAggregate 
   return calculateDerivedMetrics(aggregated);
 }
 
-function generateMonthData(baseData: CampaignRecord[], variationFactor = 1): CampaignRecord[] {
+function generateMonthData(
+  baseData: CampaignRecord[],
+  variationFactor = 1
+): CampaignRecord[] {
   return baseData.map((campaign) => {
     const variation = 0.7 + Math.random() * 0.6;
     const multiplier = variation * variationFactor;
 
     const results = Math.max(0, Math.round(campaign.results * multiplier));
     const reach = Math.max(0, Math.round(campaign.reach * multiplier));
-    const impressions = Math.max(0, Math.round(campaign.impressions * multiplier));
+    const impressions = Math.max(
+      0,
+      Math.round(campaign.impressions * multiplier)
+    );
     const amountSpent = round(campaign.amountSpent * multiplier);
     const conversionValue = round(campaign.conversionValue * multiplier);
     const purchases = Math.max(0, Math.round(campaign.purchases * multiplier));
-    const addsToCart = Math.max(0, Math.round(campaign.addsToCart * multiplier));
+    const addsToCart = Math.max(
+      0,
+      Math.round(campaign.addsToCart * multiplier)
+    );
 
     return {
       ...campaign,
@@ -301,20 +358,24 @@ function generateMonthData(baseData: CampaignRecord[], variationFactor = 1): Cam
       purchases,
       addsToCart,
       roas: amountSpent > 0 ? round(conversionValue / amountSpent) : 0,
-      costPerResult: results > 0 ? round(amountSpent / Math.max(results, 1)) : 0,
-      costPerPurchase: purchases > 0 ? round(amountSpent / Math.max(purchases, 1)) : 0,
+      costPerResult:
+        results > 0 ? round(amountSpent / Math.max(results, 1)) : 0,
+      costPerPurchase:
+        purchases > 0 ? round(amountSpent / Math.max(purchases, 1)) : 0,
     };
   });
 }
 
 function buildAnalyticsStore(baseData: CampaignRecord[]): AnalyticsStore {
-  const normalizedBase = baseData.map((campaign, index) => normalizeCampaign(campaign, index));
+  const normalizedBase = baseData.map((campaign, index) =>
+    normalizeCampaign(campaign, index)
+  );
 
   const monthlyRawData: Record<string, CampaignRecord[]> = {
-    '2025-06': generateMonthData(normalizedBase, 0.8),
-    '2025-07': generateMonthData(normalizedBase, 0.9),
-    '2025-08': normalizedBase.map((campaign) => ({ ...campaign })),
-    '2025-09': generateMonthData(normalizedBase, 1.1),
+    "2025-06": generateMonthData(normalizedBase, 0.8),
+    "2025-07": generateMonthData(normalizedBase, 0.9),
+    "2025-08": normalizedBase.map((campaign) => ({ ...campaign })),
+    "2025-09": generateMonthData(normalizedBase, 1.1),
   };
 
   const monthlyAggregates: Record<string, MonthlyAggregate> = {};
@@ -325,59 +386,42 @@ function buildAnalyticsStore(baseData: CampaignRecord[]): AnalyticsStore {
   return { monthlyRawData, monthlyAggregates };
 }
 
-async function fetchDefaultClientId(): Promise<string | undefined> {
+async function fetchCampaignData(
+  resolvedClientId?: string
+): Promise<CampaignRecord[]> {
   try {
-    const response = await fetch('/api/clients');
-    if (!response.ok) {
-      return undefined;
+    const response = await api.get(`/api/clients/C1009/data`);
+    if (response.status != 200) {
+      throw new Error(`Failed to fetch campaign data for client C1009`);
     }
 
-    const payload = await response.json();
-    const clients = Array.isArray(payload?.data) ? payload.data : [];
-    const firstClient = clients.find((client: any) => typeof client?.client_id === 'string');
+    const payload = await response.data;
+    const campaigns: unknown[] = Array.isArray(payload?.data)
+      ? payload.data
+      : [];
 
-    return firstClient?.client_id;
+    return campaigns.map((campaign, index) =>
+      normalizeCampaign(campaign, index)
+    );
   } catch (error) {
-    console.error('Unable to fetch client list', error);
-    return undefined;
-  }
-}
-
-async function fetchCampaignData(clientId?: string): Promise<CampaignRecord[]> {
-  let resolvedClientId = clientId;
-
-  if (!resolvedClientId) {
-    resolvedClientId = await fetchDefaultClientId();
-  }
-
-  if (!resolvedClientId) {
-    return [];
-  }
-
-  try {
-    const response = await fetch(`/api/clients/${resolvedClientId}/data`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch campaign data for client ${resolvedClientId}`);
-    }
-
-    const payload = await response.json();
-    const campaigns: unknown[] = Array.isArray(payload?.data) ? payload.data : [];
-
-    return campaigns.map((campaign, index) => normalizeCampaign(campaign, index));
-  } catch (error) {
-    console.error('Unable to fetch campaign data', error);
+    console.error("Unable to fetch campaign data", error);
     return [];
   }
 }
 
 async function fetchAnalyticsData(clientId?: string): Promise<AnalyticsStore> {
   const remoteData = await fetchCampaignData(clientId);
-  const baseData = remoteData.length > 0 ? remoteData : FALLBACK_CAMPAIGN_DATA.map((campaign) => ({ ...campaign }));
+  const baseData =
+    remoteData.length > 0
+      ? remoteData
+      : FALLBACK_CAMPAIGN_DATA.map((campaign) => ({ ...campaign }));
 
   return buildAnalyticsStore(baseData);
 }
 
-export async function initializeCampaignData(clientId?: string): Promise<AnalyticsStore> {
+export async function initializeCampaignData(
+  clientId?: string
+): Promise<AnalyticsStore> {
   const hasData = Object.keys(analyticsStore.monthlyAggregates).length > 0;
   if (hasData) {
     return analyticsStore;
@@ -414,7 +458,11 @@ export function getMonthlyRawData(month: string): CampaignRecord[] {
 }
 
 export function calculateGrowth(current: number, previous: number): number {
-  if (!Number.isFinite(current) || !Number.isFinite(previous) || previous === 0) {
+  if (
+    !Number.isFinite(current) ||
+    !Number.isFinite(previous) ||
+    previous === 0
+  ) {
     return 0;
   }
 
@@ -422,14 +470,14 @@ export function calculateGrowth(current: number, previous: number): number {
 }
 
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-CA', {
-    style: 'currency',
-    currency: 'CAD',
+  return new Intl.NumberFormat("en-CA", {
+    style: "currency",
+    currency: "CAD",
   }).format(amount ?? 0);
 }
 
 export function formatNumber(numberValue: number, decimals = 0): string {
-  return new Intl.NumberFormat('en-CA', {
+  return new Intl.NumberFormat("en-CA", {
     maximumFractionDigits: decimals,
     minimumFractionDigits: decimals,
   }).format(numberValue ?? 0);
@@ -439,9 +487,9 @@ export function formatPercentage(numberValue: number, decimals = 1): string {
   return `${formatNumber(numberValue, decimals)}%`;
 }
 
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   initializeCampaignData().catch((error) => {
-    console.error('Error preloading campaign analytics data', error);
+    console.error("Error preloading campaign analytics data", error);
   });
 }
 

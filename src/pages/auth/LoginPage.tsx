@@ -1,17 +1,25 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { toast } from 'react-hot-toast';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Logo } from '@/components/Logo';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "react-hot-toast";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/Card.tsx";
+import { Rocket } from "lucide-react";
 
 const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -20,7 +28,7 @@ export const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
-  
+
   const {
     register,
     handleSubmit,
@@ -33,93 +41,71 @@ export const LoginPage: React.FC = () => {
     try {
       setIsLoading(true);
       await login(data.email, data.password);
-      toast.success('Logged in successfully');
-      navigate('/dashboard');
+      toast.success("Logged in successfully");
+      navigate("/");
     } catch (error) {
-      toast.error('Invalid credentials');
+      toast.error("Invalid credentials");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <div className="flex justify-center">
-            <Logo className="h-16 w-auto" />
+    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-teal-50 to-coral-50 dark:from-violet-950 dark:via-teal-950 dark:to-coral-950 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-aurora opacity-30 animate-pulse" />
+      <Card className="w-full max-w-md relative backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-white/20 shadow-2xl animate-scale-in">
+        <CardHeader className="text-center space-y-4">
+          <div className="mx-auto w-16 h-16 bg-gradient-to-r from-violet-500 to-teal-500 rounded-full flex items-center justify-center shadow-lg">
+            <Rocket className="w-8 h-8 text-white" />
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Or{' '}
-            <button
-              onClick={() => navigate('/register')}
-              className="font-medium text-indigo-600 hover:text-indigo-500"
-            >
-              create a new account
-            </button>
-          </p>
-        </div>
-        
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email-address" className="sr-only">
-                Email address
-              </label>
+          <CardTitle className="text-3xl font-bold gradient-text">
+            Ads Analytics Platform
+          </CardTitle>
+          <CardDescription className="text-base">
+            Welcome back! Sign in to your analytics dashboard
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-semibold">
+                Email Address
+              </Label>
               <Input
                 id="email-address"
                 type="email"
                 autoComplete="email"
                 placeholder="Email address"
-                {...register('email')}
+                {...register("email")}
                 error={errors.email?.message}
+                className="h-12 bg-white/80 dark:bg-slate-800/80 border-2 border-violet-200 dark:border-violet-800 focus:border-violet-500 dark:focus:border-violet-400 rounded-lg"
               />
             </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-semibold">
                 Password
-              </label>
+              </Label>
               <Input
                 id="password"
                 type="password"
                 autoComplete="current-password"
-                placeholder="Password"
-                {...register('password')}
+                {...register("password")}
                 error={errors.password?.message}
+                className="h-12 bg-white/80 dark:bg-slate-800/80 border-2 border-violet-200 dark:border-violet-800 focus:border-violet-500 dark:focus:border-violet-400 rounded-lg"
+                placeholder="password"
               />
             </div>
-          </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-              />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                Remember me
-              </label>
-            </div>
-
-            <div className="text-sm">
-              <a href="/forgot-password" className="font-medium text-indigo-600 hover:text-indigo-500">
-                Forgot your password?
-              </a>
-            </div>
-          </div>
-
-          <div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Signing in...' : 'Sign in'}
+            <Button
+              type="submit"
+              className="w-full font-semibold"
+              disabled={isLoading}
+            >
+              {isLoading ? "Signing in..." : "Sign in"}
             </Button>
-          </div>
-        </form>
-      </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -1,14 +1,11 @@
 import React, { useState } from "react";
 import { ModeToggle } from "./components/ui/ModeToggle.tsx";
 import { Button } from "./components/ui/Button.tsx";
-import { Input } from "./components/ui/Input.tsx";
-import { Label } from "./components/ui/Label.tsx";
 import CalendarPage from "@/pages/calendar/CalendarPage.tsx";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "./components/ui/Card.tsx";
@@ -23,7 +20,6 @@ import {
   Zap,
   Shield,
   Smartphone,
-  Sparkles,
   Rocket,
   Target,
   FileSpreadsheet,
@@ -33,112 +29,7 @@ import {
 } from "lucide-react";
 import "./globals.css";
 import { ClientsPage } from "./pages/clients/ClientsPage.tsx";
-import AnalyticsPage  from "./pages/analytics/AnalyticsPage.tsx";
-
-function LoginForm() {
-  const [credentials, setCredentials] = useState({ email: "", password: "" });
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (
-      credentials.email === "admin@agency.com" &&
-      credentials.password === "password"
-    ) {
-      setIsLoggedIn(true);
-    } else {
-      alert("Invalid credentials. Use: admin@agency.com / password");
-    }
-  };
-
-  if (isLoggedIn) {
-    return <Dashboard />;
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-teal-50 to-coral-50 dark:from-violet-950 dark:via-teal-950 dark:to-coral-950 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-aurora opacity-30 animate-pulse"></div>
-      <Card className="w-full max-w-md relative backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-white/20 shadow-2xl animate-scale-in">
-        <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-r from-violet-500 to-teal-500 rounded-full flex items-center justify-center shadow-lg">
-            <Rocket className="w-8 h-8 text-white" />
-          </div>
-          <CardTitle className="text-3xl font-bold gradient-text">
-            Ads Analytics Platform
-          </CardTitle>
-          <CardDescription className="text-base">
-            Welcome back! Sign in to your analytics dashboard
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-semibold">
-                Email Address
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={credentials.email}
-                onChange={(e) =>
-                  setCredentials({ ...credentials, email: e.target.value })
-                }
-                className="h-12 bg-white/80 dark:bg-slate-800/80 border-2 border-violet-200 dark:border-violet-800 focus:border-violet-500 dark:focus:border-violet-400 rounded-lg"
-                placeholder="admin@agency.com"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-semibold">
-                Password
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                value={credentials.password}
-                onChange={(e) =>
-                  setCredentials({ ...credentials, password: e.target.value })
-                }
-                className="h-12 bg-white/80 dark:bg-slate-800/80 border-2 border-violet-200 dark:border-violet-800 focus:border-violet-500 dark:focus:border-violet-400 rounded-lg"
-                placeholder="password"
-              />
-            </div>
-
-            <Button
-              type="submit"
-              variant="gradient"
-              size="xl"
-              className="w-full font-semibold"
-            >
-              <Sparkles className="w-5 h-5 mr-2" />
-              Sign In to Dashboard
-            </Button>
-          </form>
-        </CardContent>
-
-        <CardFooter>
-          <Card className="w-full bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950 border-emerald-200 dark:border-emerald-800">
-            <CardContent className="p-4">
-              <p className="text-sm text-center text-emerald-700 dark:text-emerald-300 font-medium">
-                <Shield className="inline w-4 h-4 mr-1" />
-                Demo Credentials
-              </p>
-              <div className="text-xs text-center space-y-1 mt-2 text-emerald-600 dark:text-emerald-400">
-                <p>
-                  <strong>Email:</strong> admin@agency.com
-                </p>
-                <p>
-                  <strong>Password:</strong> password
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </CardFooter>
-      </Card>
-    </div>
-  );
-}
+import AnalyticsPage from "./pages/analytics/AnalyticsPage.tsx";
 
 function ResponsiveSidebar({
   tabs,
@@ -183,7 +74,9 @@ function ResponsiveSidebar({
       {/* Sidebar */}
       <aside
         className={`fixed top-0 left-0 h-full w-64 bg-white/80 backdrop-blur-lg dark:bg-slate-900/80 border-r border-white/20 shadow-lg p-6 flex flex-col justify-between transition-transform z-40
-        ${open ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 lg:static lg:block`}
+        ${
+          open ? "translate-x-0" : "-translate-x-full"
+        } lg:translate-x-0 lg:static lg:block`}
         style={{ transitionProperty: "transform" }}
       >
         {/* Logo & close button */}
@@ -209,9 +102,6 @@ function ResponsiveSidebar({
         <div className="space-y-6">
           <p className="text-base font-semibold text-muted-foreground">
             Welcome back, Admin
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Last login: Today, 9:30 AM
           </p>
         </div>
 
@@ -441,57 +331,60 @@ function TabContent({ activeTab }: { activeTab: string }) {
       );
 
     case "analytics":
-      return (<>
-      <AnalyticsPage></AnalyticsPage>
-        <div className="space-y-8 my-12 lg:my-0">
-          <div className="text-center space-y-4">
-            <h2 className="text-4xl font-bold gradient-text">Analytics Hub</h2>
-            <p className="text-lg text-muted-foreground">
-              Upload your advertising data to unlock powerful insights
-            </p>
-          </div>
+      return (
+        <>
+          <AnalyticsPage></AnalyticsPage>
+          <div className="space-y-8 my-12 lg:my-0">
+            <div className="text-center space-y-4">
+              <h2 className="text-4xl font-bold gradient-text">
+                Analytics Hub
+              </h2>
+              <p className="text-lg text-muted-foreground">
+                Upload your advertising data to unlock powerful insights
+              </p>
+            </div>
 
-          <Card className="max-w-4xl mx-auto border-dashed border-2 border-teal-300 dark:border-teal-700 bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-950 dark:to-cyan-950">
-            <CardContent className="p-12 text-center space-y-6">
-              <div className="w-20 h-20 mx-auto bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full flex items-center justify-center">
-                <Upload className="w-10 h-10 text-white" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-2xl font-semibold text-teal-800 dark:text-teal-200">
-                  Drop Files Here
-                </h3>
-                <p className="text-teal-600 dark:text-teal-400">
-                  or click to browse your computer
-                </p>
-              </div>
-              <div className="text-sm text-teal-500 dark:text-teal-400 space-y-1">
-                <p>Supports CSV, Excel files from:</p>
-                <div className="flex justify-center space-x-6 mt-2">
-                  <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
-                    Meta Ads
-                  </span>
-                  <span className="px-3 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-full text-xs font-medium">
-                    Google Ads
-                  </span>
+            <Card className="max-w-4xl mx-auto border-dashed border-2 border-teal-300 dark:border-teal-700 bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-950 dark:to-cyan-950">
+              <CardContent className="p-12 text-center space-y-6">
+                <div className="w-20 h-20 mx-auto bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full flex items-center justify-center">
+                  <Upload className="w-10 h-10 text-white" />
                 </div>
-              </div>
-              <Button variant="gradient" size="lg" className="mt-4">
-                <FileSpreadsheet className="w-5 h-5 mr-2" />
-                Choose Files
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-semibold text-teal-800 dark:text-teal-200">
+                    Drop Files Here
+                  </h3>
+                  <p className="text-teal-600 dark:text-teal-400">
+                    or click to browse your computer
+                  </p>
+                </div>
+                <div className="text-sm text-teal-500 dark:text-teal-400 space-y-1">
+                  <p>Supports CSV, Excel files from:</p>
+                  <div className="flex justify-center space-x-6 mt-2">
+                    <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
+                      Meta Ads
+                    </span>
+                    <span className="px-3 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-full text-xs font-medium">
+                      Google Ads
+                    </span>
+                  </div>
+                </div>
+                <Button variant="gradient" size="lg" className="mt-4">
+                  <FileSpreadsheet className="w-5 h-5 mr-2" />
+                  Choose Files
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </>
       );
 
     case "calendar":
       return <CalendarPage></CalendarPage>;
 
-      case "clients":
-        return <ClientsPage/>
+    case "clients":
+      return <ClientsPage />;
 
-    default :
+    default:
       return (
         <div className="text-center space-y-8 my-12 lg:my-0">
           <div className="space-y-4">
@@ -523,7 +416,8 @@ function TabContent({ activeTab }: { activeTab: string }) {
 }
 
 function App() {
-  return <LoginForm />;
+  // If authenticated, render the Dashboard
+  return <Dashboard />;
 }
 
 export default App;
