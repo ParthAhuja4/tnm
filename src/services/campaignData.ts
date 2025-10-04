@@ -389,6 +389,7 @@ function buildAnalyticsStore(baseData: CampaignRecord[]): AnalyticsStore {
 async function fetchCampaignData(
   resolvedClientId?: string
 ): Promise<CampaignRecord[]> {
+  console.log(resolvedClientId);
   try {
     const response = await api.get(`/api/clients/C1009/data`);
     if (response.status != 200) {
