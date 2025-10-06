@@ -3,6 +3,7 @@ import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { ModeToggle } from "./components/ui/ModeToggle.tsx";
 import { Button } from "./components/ui/Button.tsx";
+import { cn } from "@/lib/utils";
 import AnalyticsPage from "./pages/analytics/AnalyticsPage.tsx";
 import {
   Card,
@@ -72,6 +73,22 @@ const tabs = [
 
 type TabDefinition = (typeof tabs)[number];
 
+type AccentColor = TabDefinition["color"];
+
+const tabGradients: Record<AccentColor, string> = {
+  violet: "from-violet-500 via-violet-600 to-violet-700",
+  teal: "from-teal-500 via-teal-600 to-teal-700",
+  coral: "from-coral-500 via-coral-600 to-coral-700",
+  emerald: "from-emerald-500 via-emerald-600 to-emerald-700",
+};
+
+const tabSoftBackground: Record<AccentColor, string> = {
+  violet: "hover:bg-violet-500/10 dark:hover:bg-violet-500/20",
+  teal: "hover:bg-teal-500/10 dark:hover:bg-teal-500/20",
+  coral: "hover:bg-coral-500/10 dark:hover:bg-coral-500/20",
+  emerald: "hover:bg-emerald-500/10 dark:hover:bg-emerald-500/20",
+};
+
 function ResponsiveSidebar({
   tabs,
   isOpen,
@@ -88,7 +105,7 @@ function ResponsiveSidebar({
   return (
     <>
       {/* Hamburger for md and below */}
-      <div className="fixed top-0 left-0 w-full bg-white/80 dark:bg-slate-900/80 flex items-center justify-between px-6 py-3 z-40 lg:hidden border-b border-white/20 shadow-sm">
+      <div className="fixed top-0 left-0 w-full bg-white/95 dark:bg-slate-950/95 text-slate-800 dark:text-slate-100 flex items-center justify-between px-6 py-3 z-40 lg:hidden border-b border-slate-200/70 dark:border-slate-800/70 shadow-sm backdrop-blur-md">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-r from-violet-500 to-teal-500 flex items-center justify-center shadow-lg">
             <Rocket className="w-6 h-6 text-white" />
@@ -99,7 +116,7 @@ function ResponsiveSidebar({
         </div>
         <button
           onClick={onToggle}
-          className="text-3xl text-slate-700 dark:text-white focus:outline-none rounded-lg p-1 hover:bg-accent transition"
+          className="text-3xl text-slate-700 dark:text-slate-100 rounded-lg p-1 transition hover:bg-slate-200/70 dark:hover:bg-slate-800/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-slate-600 dark:focus-visible:ring-offset-slate-950"
           aria-label="Toggle menu"
         >
           {isOpen ? <X /> : <Menu />}
@@ -116,7 +133,7 @@ function ResponsiveSidebar({
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-white/80 backdrop-blur-lg dark:bg-slate-900/80 border-r border-white/20 shadow-lg p-6 flex flex-col justify-between transition-transform z-40
+        className={`fixed top-0 left-0 h-full w-64 bg-white/90 text-slate-800 dark:bg-slate-950/90 dark:text-slate-100 backdrop-blur-xl border-r border-slate-200/60 dark:border-slate-800/60 shadow-2xl p-6 flex flex-col justify-between transition-transform z-40
         ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 lg:static lg:block`}
@@ -134,7 +151,7 @@ function ResponsiveSidebar({
           </div>
           <button
             onClick={onClose}
-            className="text-3xl text-slate-700 dark:text-white hover:text-foreground focus:outline-none rounded-full p-1 transition"
+            className="text-3xl text-slate-700 dark:text-slate-100 rounded-full p-1 transition hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-slate-800/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-slate-600 dark:focus-visible:ring-offset-slate-950"
             aria-label="Close menu"
           >
             <X />
@@ -143,7 +160,7 @@ function ResponsiveSidebar({
 
         {/* Welcome text */}
         <div className="space-y-6">
-          <p className="text-base font-semibold text-muted-foreground">
+          <p className="text-base font-semibold text-slate-600 dark:text-slate-400">
             Welcome back
           </p>
         </div>
@@ -156,22 +173,24 @@ function ResponsiveSidebar({
               to={tab.path}
               end={tab.path === "dashboard"}
               className={({ isActive }) =>
-                `group flex items-center justify-start space-x-3 py-3 px-5 rounded-xl font-semibold text-base transition-transform duration-300 ${
+                cn(
+                  "group flex items-center gap-3 rounded-xl px-5 py-3 text-base font-semibold transition-colors duration-200 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-400 focus-visible:ring-offset-white dark:focus-visible:ring-slate-600 dark:focus-visible:ring-offset-slate-950",
                   isActive
-                    ? `bg-gradient-to-r from-${tab.color}-400 to-${tab.color}-600 text-white shadow-lg`
-                    : "text-muted-foreground hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-slate-800 dark:hover:text-white"
-                }`
+                    ? `bg-gradient-to-r ${tabGradients[tab.color]} text-white shadow-lg ring-1 ring-white/40 dark:ring-white/10`
+                    : tabSoftBackground[tab.color]
+                )
               }
               onClick={onClose}
             >
               {({ isActive }) => (
                 <>
                   <tab.icon
-                    className={`w-6 h-6 ${
+                    className={cn(
+                      "h-6 w-6 transition-colors duration-200",
                       isActive
                         ? "text-white"
-                        : "text-muted-foreground group-hover:text-foreground"
-                    }`}
+                        : "text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-100"
+                    )}
                   />
                   <span className="select-none">{tab.name}</span>
                 </>
