@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Calendar as CalendarIcon, X } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Calendar as CalendarIcon, X, Loader2 } from "lucide-react";
 import { Calendar } from "react-big-calendar";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -9,6 +9,17 @@ import { dateFnsLocalizer } from "react-big-calendar";
 import { format, startOfWeek, getDay } from "date-fns";
 import { enUS } from "date-fns/locale/en-US";
 import { cn } from "@/lib/utils.ts";
+import { api } from "@/services/api";
+
+function formatPostingTime(time: string): string {
+  const [hh, mm] = time.split(":"); // ["11", "01", ...]
+  let hour = parseInt(hh, 10);
+  const minute = mm;
+  const ampm = hour >= 12 ? "PM" : "AM";
+  hour = hour % 12 || 12; // convert 0 → 12, 13 → 1
+  const hourStr = hour.toString().padStart(2, "0");
+  return `${hourStr}:${minute} ${ampm}`; // "11:01 AM"
+}
 
 // Localizer for react-big-calendar
 const locales = {
@@ -32,7 +43,6 @@ type Event = {
   status: "pending" | "approved" | "disapproved";
   comments: Array<{ from: string; comment: string }>;
   client_name: string;
-  assigned_to: string;
   created_at: string;
   updated_at: string;
 };
@@ -42,30 +52,6 @@ type CalendarEvent = Event & {
   start: Date;
   end: Date;
 };
-
-// Initial events data
-const initialEvents: Event[] = [
-  {
-    event_id: 1,
-    event_name: "Product Launch",
-    event_date: "2025-09-30",
-    posting_time: "10:00 AM",
-    media_url: "https://example.com/images/product_launch.jpg",
-    media_type: "image",
-    status: "pending",
-    comments: [
-      { from: "Client", comment: "Looks great, can we tweak the image a bit?" },
-      {
-        from: "Design Company",
-        comment: "Sure, we will update it as per your feedback.",
-      },
-    ],
-    client_name: "John Doe",
-    assigned_to: "Jane Smith",
-    created_at: "2025-09-10T15:00:00Z",
-    updated_at: "2025-09-15T10:30:00Z",
-  },
-];
 
 // Function to create default event
 const createDefaultEventForm = (): Event => ({
@@ -78,17 +64,61 @@ const createDefaultEventForm = (): Event => ({
   status: "pending",
   comments: [],
   client_name: "",
-  assigned_to: "",
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 });
 
 const CalendarPage: React.FC = () => {
-  const [events, setEvents] = useState<Event[]>(initialEvents);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setModalOpen] = useState(false);
   const [eventForm, setEventForm] = useState<Event>(createDefaultEventForm());
   const [newComment, setNewComment] = useState<string>("");
   const [isEditing, setIsEditing] = useState(false);
+  // const role: string =
+  //   JSON.parse(localStorage.getItem("user") || "null")?.role || "";
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      setIsLoading(true);
+
+      try {
+        const response: any = await api.get("/api/events");
+
+        if (response.status !== 200) {
+          throw new Error("Failed to fetch");
+        }
+
+        const payload: any = response?.data?.data?.data ?? [];
+
+        const mappedEvents: Event[] = Array.isArray(payload)
+          ? payload.map((e: any) => ({
+              event_id: e.id,
+              event_name: e.event_name,
+              event_date: e.event_date.split("T")[0],
+              posting_time: formatPostingTime(e.posting_time),
+              media_url: e.image_url,
+              media_type: e.media_type,
+              status: e.status,
+              comments: e.comments.map((cmnt: any) => ({
+                from: cmnt.author_type,
+                comment: cmnt.body,
+              })),
+              client_name: e.client_name,
+              created_at: e.created_at,
+              updated_at: e.updated_at,
+            }))
+          : [];
+        setEvents(mappedEvents);
+      } catch (e) {
+        console.log(e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, []);
 
   const { getRootProps, getInputProps } = useDropzone({
     accept: { "image/*": [], "video/*": [] }, // Accept both image and video files
@@ -187,17 +217,15 @@ const CalendarPage: React.FC = () => {
             ? Math.max(...previousEvents.map((event) => event.event_id)) + 1
             : 1;
 
-        return [
-          ...previousEvents,
-          { ...updatedEvent, event_id: nextId },
-        ];
+        return [...previousEvents, { ...updatedEvent, event_id: nextId }];
       });
     }
 
     closeModal();
   };
 
-  const inputClassName = "w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-700 shadow-sm transition focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:opacity-60";
+  const inputClassName =
+    "w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-700 shadow-sm transition focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:opacity-60";
 
   // Render event cards
   const calendarEvents = events.map(
@@ -207,7 +235,7 @@ const CalendarPage: React.FC = () => {
         title: event.event_name,
         start: event.event_date ? new Date(event.event_date) : new Date(),
         end: event.event_date ? new Date(event.event_date) : new Date(),
-      }) as CalendarEvent
+      } as CalendarEvent)
   );
 
   const renderEvent = (event: Event) => (
@@ -234,8 +262,8 @@ const CalendarPage: React.FC = () => {
                 event.status === "approved"
                   ? "bg-green-100 text-green-800"
                   : event.status === "disapproved"
-                    ? "bg-red-100 text-red-800"
-                    : "bg-blue-100 text-blue-800"
+                  ? "bg-red-100 text-red-800"
+                  : "bg-blue-100 text-blue-800"
               )}
             >
               {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
@@ -273,6 +301,14 @@ const CalendarPage: React.FC = () => {
       </div>
     </div>
   );
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-indigo-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 px-4 sm:px-6 md:px-8">
@@ -382,14 +418,9 @@ const CalendarPage: React.FC = () => {
                     type="text"
                     placeholder="Client Name"
                     value={eventForm.client_name}
-                    onChange={(e) => handleChange("client_name", e.target.value)}
-                    className={inputClassName}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Assigned To"
-                    value={eventForm.assigned_to}
-                    onChange={(e) => handleChange("assigned_to", e.target.value)}
+                    onChange={(e) =>
+                      handleChange("client_name", e.target.value)
+                    }
                     className={inputClassName}
                   />
                 </div>
@@ -403,7 +434,9 @@ const CalendarPage: React.FC = () => {
                   <input
                     type="time"
                     value={eventForm.posting_time}
-                    onChange={(e) => handleChange("posting_time", e.target.value)}
+                    onChange={(e) =>
+                      handleChange("posting_time", e.target.value)
+                    }
                     className={inputClassName}
                   />
                 </div>
@@ -415,7 +448,9 @@ const CalendarPage: React.FC = () => {
               >
                 <input {...getInputProps()} />
                 <p>Drag & drop an image or video here</p>
-                <p className="text-xs text-indigo-400">or click to browse files from your device</p>
+                <p className="text-xs text-indigo-400">
+                  or click to browse files from your device
+                </p>
               </div>
 
               {eventForm.media_url && (
@@ -441,7 +476,9 @@ const CalendarPage: React.FC = () => {
                 placeholder="Add a comment"
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                className={[inputClassName, "min-h-[120px] resize-none"].join(" ")}
+                className={[inputClassName, "min-h-[120px] resize-none"].join(
+                  " "
+                )}
               />
 
               <select
@@ -480,4 +517,3 @@ const CalendarPage: React.FC = () => {
 };
 
 export default CalendarPage;
-

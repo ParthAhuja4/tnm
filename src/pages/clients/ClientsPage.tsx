@@ -64,7 +64,6 @@ export const ClientsPage: React.FC = () => {
         }
 
         const payload: any = response?.data?.data;
-        console.log(payload);
 
         // Map the API response to match the expected Client type
         const mappedClients: Client[] = payload.map((c: any) => ({
