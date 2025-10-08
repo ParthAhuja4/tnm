@@ -176,7 +176,9 @@ function ResponsiveSidebar({
                 cn(
                   "group flex items-center gap-3 rounded-xl px-5 py-3 text-base font-semibold transition-colors duration-200 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-400 focus-visible:ring-offset-white dark:focus-visible:ring-slate-600 dark:focus-visible:ring-offset-slate-950",
                   isActive
-                    ? `bg-gradient-to-r ${tabGradients[tab.color]} text-white shadow-lg ring-1 ring-white/40 dark:ring-white/10`
+                    ? `bg-gradient-to-r ${
+                        tabGradients[tab.color]
+                      } text-white shadow-lg ring-1 ring-white/40 dark:ring-white/10`
                     : tabSoftBackground[tab.color]
                 )
               }
@@ -202,7 +204,7 @@ function ResponsiveSidebar({
             <button
               type="button"
               onClick={logout}
-              className="group relative w-full overflow-hidden rounded-xl border border-white/20 bg-gradient-to-r from-rose-500 via-fuchsia-500 to-sky-500 px-5 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900"
+              className="group relative w-full overflow-hidden rounded-xl border border-white/20 bg-black px-5 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900"
             >
               <span className="absolute inset-0 bg-white/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
               <span className="relative flex items-center justify-center gap-2">
@@ -229,7 +231,7 @@ function DashboardLayout() {
         onClose={() => setIsOpen(false)}
       />
 
-      <main className="flex-1 lg:ml-64 p-6 md:p-8">
+      <main className="flex-1 lg:ml-30 p-6 md:p-8">
         <div className="space-y-8">
           <Outlet />
         </div>
@@ -510,5 +512,3 @@ function App() {
 export { DashboardHome, AnalyticsRoute, UnderConstruction };
 
 export default App;
-
-

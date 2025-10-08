@@ -1,12 +1,31 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import type { TooltipProps } from 'recharts';
-import { Eye } from 'lucide-react';
-import { formatNumber, calculateGrowth, getMonthlyRawData } from '../../services/campaignData';
-import type { CampaignRecord, MonthlyAggregate } from '../../services/campaignData';
-import { analyticsCardClasses, analyticsCardSkeletonClasses, chartLegendClasses, chartLegendDotClass } from './chartStyles';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import type { TooltipProps } from "recharts";
+import { Eye } from "lucide-react";
+import {
+  formatNumber,
+  calculateGrowth,
+  getMonthlyRawData,
+} from "../../services/campaignData";
+import type {
+  CampaignRecord,
+  MonthlyAggregate,
+} from "../../services/campaignData";
+import {
+  analyticsCardClasses,
+  analyticsCardSkeletonClasses,
+  chartLegendClasses,
+  chartLegendDotClass,
+} from "./chartStyles";
 
-
-const chartHeightClass = 'h-60 sm:h-64 xl:h-72';
+const chartHeightClass = "h-60 sm:h-64 xl:h-72";
 
 interface ReachImpressionsChartProps {
   startMonth?: string;
@@ -25,7 +44,6 @@ interface ChartDataPoint {
   impressionsGrowth: number;
 }
 
-
 const mapCampaignToCurrent = (campaign: CampaignRecord, index: number) => ({
   name: `Campaign ${index + 1}`,
   fullName: campaign.campaignName,
@@ -39,7 +57,10 @@ const mapCampaignToPrevious = (campaign: CampaignRecord, index: number) => ({
   impressions: campaign.impressions,
 });
 
-const buildChartData = (current: CampaignRecord[], previous: CampaignRecord[]): ChartDataPoint[] => {
+const buildChartData = (
+  current: CampaignRecord[],
+  previous: CampaignRecord[]
+): ChartDataPoint[] => {
   const currentData = current.map(mapCampaignToCurrent);
   const previousData = previous.map(mapCampaignToPrevious);
 
@@ -56,7 +77,10 @@ const buildChartData = (current: CampaignRecord[], previous: CampaignRecord[]): 
       currentImpressions: currentEntry.impressions,
       previousImpressions,
       reachGrowth: calculateGrowth(currentEntry.reach, previousReach),
-      impressionsGrowth: calculateGrowth(currentEntry.impressions, previousImpressions),
+      impressionsGrowth: calculateGrowth(
+        currentEntry.impressions,
+        previousImpressions
+      ),
     };
   });
 };
@@ -68,53 +92,79 @@ const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
       return null;
     }
 
-    const reachGrowth = Number.isFinite(data.reachGrowth) ? data.reachGrowth : 0;
-    const impressionsGrowth = Number.isFinite(data.impressionsGrowth) ? data.impressionsGrowth : 0;
+    const reachGrowth = Number.isFinite(data.reachGrowth)
+      ? data.reachGrowth
+      : 0;
+    const impressionsGrowth = Number.isFinite(data.impressionsGrowth)
+      ? data.impressionsGrowth
+      : 0;
 
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
-        <p className="mb-3 text-sm font-semibold text-slate-900">{data.fullName}</p>
+        <p className="mb-3 text-sm font-semibold text-slate-900">
+          {data.fullName}
+        </p>
         <div className="space-y-3 text-sm">
           <div>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Reach</p>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Reach
+            </p>
             <div className="flex items-center justify-between">
               <span className="text-violet-600">Current</span>
-              <span className="font-semibold">{formatNumber(data.currentReach)}</span>
+              <span className="font-semibold">
+                {formatNumber(data.currentReach)}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-slate-500">Previous</span>
-              <span className="font-medium">{formatNumber(data.previousReach)}</span>
+              <span className="font-medium">
+                {formatNumber(data.previousReach)}
+              </span>
             </div>
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-500">Growth</span>
               <span
                 className={`font-semibold ${
-                  reachGrowth > 0 ? 'text-emerald-600' : reachGrowth < 0 ? 'text-rose-600' : 'text-slate-600'
+                  reachGrowth > 0
+                    ? "text-emerald-600"
+                    : reachGrowth < 0
+                    ? "text-rose-600"
+                    : "text-slate-600"
                 }`}
               >
-                {reachGrowth > 0 ? '+' : ''}
+                {reachGrowth > 0 ? "+" : ""}
                 {reachGrowth.toFixed(1)}%
               </span>
             </div>
           </div>
           <div className="border-t pt-3">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Impressions</p>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Impressions
+            </p>
             <div className="flex items-center justify-between">
               <span className="text-sky-600">Current</span>
-              <span className="font-semibold">{formatNumber(data.currentImpressions)}</span>
+              <span className="font-semibold">
+                {formatNumber(data.currentImpressions)}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-slate-500">Previous</span>
-              <span className="font-medium">{formatNumber(data.previousImpressions)}</span>
+              <span className="font-medium">
+                {formatNumber(data.previousImpressions)}
+              </span>
             </div>
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-500">Growth</span>
               <span
                 className={`font-semibold ${
-                  impressionsGrowth > 0 ? 'text-emerald-600' : impressionsGrowth < 0 ? 'text-rose-600' : 'text-slate-600'
+                  impressionsGrowth > 0
+                    ? "text-emerald-600"
+                    : impressionsGrowth < 0
+                    ? "text-rose-600"
+                    : "text-slate-600"
                 }`}
               >
-                {impressionsGrowth > 0 ? '+' : ''}
+                {impressionsGrowth > 0 ? "+" : ""}
                 {impressionsGrowth.toFixed(1)}%
               </span>
             </div>
@@ -127,7 +177,11 @@ const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
   return null;
 };
 
-const ReachImpressionsChart = ({ startMonth, compareMonth, monthlyData }: ReachImpressionsChartProps) => {
+const ReachImpressionsChart = ({
+  startMonth,
+  compareMonth,
+  monthlyData,
+}: ReachImpressionsChartProps) => {
   if (!startMonth || !compareMonth || !monthlyData) {
     return (
       <div className={analyticsCardSkeletonClasses}>
@@ -150,8 +204,12 @@ const ReachImpressionsChart = ({ startMonth, compareMonth, monthlyData }: ReachI
             <Eye className="h-5 w-5" />
           </span>
           <div>
-            <h3 className="text-base font-semibold text-slate-900">Reach & Impressions</h3>
-            <p className="text-sm text-slate-500">Compare visibility trends for each campaign.</p>
+            <h3 className="text-base font-semibold text-slate-900">
+              Reach & Impressions
+            </h3>
+            <p className="text-sm text-slate-500">
+              Compare visibility trends for each campaign.
+            </p>
           </div>
         </div>
         <div className={chartLegendClasses}>
@@ -176,23 +234,34 @@ const ReachImpressionsChart = ({ startMonth, compareMonth, monthlyData }: ReachI
 
       <div className={chartHeightClass}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 10, right: 16, left: 0, bottom: 20 }}>
+          <LineChart
+            data={chartData}
+            margin={{ top: 10, right: 16, left: 0, bottom: 20 }}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-            <XAxis dataKey="name" axisLine={false} tickLine={false} tickMargin={12} />
+            <XAxis
+              dataKey="name"
+              axisLine={false}
+              tickLine={false}
+              tickMargin={12}
+            />
             <YAxis
               axisLine={false}
               tickLine={false}
               tickMargin={12}
               tickFormatter={(value) => formatNumber(Number(value))}
             />
-            <Tooltip content={<CustomTooltip />} wrapperStyle={{ outline: 'none' }} />
+            <Tooltip
+              content={<CustomTooltip />}
+              wrapperStyle={{ outline: "none" }}
+            />
             <Line
               type="monotone"
               dataKey="currentReach"
               stroke="#8b5cf6"
               strokeWidth={3}
-              dot={{ fill: '#8b5cf6', r: 4 }}
-              activeDot={{ r: 6, fill: '#8b5cf6' }}
+              dot={{ fill: "#8b5cf6", r: 4 }}
+              activeDot={{ r: 6, fill: "#8b5cf6" }}
               name="Current reach"
             />
             <Line
@@ -200,17 +269,17 @@ const ReachImpressionsChart = ({ startMonth, compareMonth, monthlyData }: ReachI
               dataKey="currentImpressions"
               stroke="#0ea5e9"
               strokeWidth={3}
-              dot={{ fill: '#0ea5e9', r: 4 }}
-              activeDot={{ r: 6, fill: '#0ea5e9' }}
+              dot={{ fill: "#0ea5e9", r: 4 }}
+              activeDot={{ r: 6, fill: "#0ea5e9" }}
               name="Current impressions"
             />
             <Line
               type="monotone"
               dataKey="previousReach"
-              stroke="#cbd5f5"
+              stroke="#94A3B8"
               strokeWidth={2}
               strokeDasharray="5 5"
-              dot={{ fill: '#cbd5f5', r: 3 }}
+              dot={{ fill: "#cbd5f5", r: 3 }}
               name="Previous reach"
             />
             <Line
@@ -219,7 +288,7 @@ const ReachImpressionsChart = ({ startMonth, compareMonth, monthlyData }: ReachI
               stroke="#94a3b8"
               strokeWidth={2}
               strokeDasharray="5 5"
-              dot={{ fill: '#94a3b8', r: 3 }}
+              dot={{ fill: "#94a3b8", r: 3 }}
               name="Previous impressions"
             />
           </LineChart>
@@ -230,4 +299,3 @@ const ReachImpressionsChart = ({ startMonth, compareMonth, monthlyData }: ReachI
 };
 
 export default ReachImpressionsChart;
-

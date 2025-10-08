@@ -1,12 +1,32 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import type { TooltipProps } from 'recharts';
-import { TrendingUp } from 'lucide-react';
-import { formatNumber, calculateGrowth, getMonthlyRawData } from '../../services/campaignData';
-import type { CampaignRecord, MonthlyAggregate } from '../../services/campaignData';
-import ChartAxisTick from './ChartAxisTick';
-import { analyticsCardClasses, analyticsCardSkeletonClasses, chartLegendClasses, chartLegendDotClass } from './chartStyles';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import type { TooltipProps } from "recharts";
+import { TrendingUp } from "lucide-react";
+import {
+  formatNumber,
+  calculateGrowth,
+  getMonthlyRawData,
+} from "../../services/campaignData";
+import type {
+  CampaignRecord,
+  MonthlyAggregate,
+} from "../../services/campaignData";
+import ChartAxisTick from "./ChartAxisTick";
+import {
+  analyticsCardClasses,
+  analyticsCardSkeletonClasses,
+  chartLegendClasses,
+  chartLegendDotClass,
+} from "./chartStyles";
 
-const chartHeightClass = 'h-60 sm:h-64 xl:h-72';
+const chartHeightClass = "h-60 sm:h-64 xl:h-72";
 
 interface ResultsChartProps {
   startMonth?: string;
@@ -22,8 +42,10 @@ interface ChartDataPoint {
   growth: number;
 }
 
-
-const buildChartData = (current: CampaignRecord[], previous: CampaignRecord[]): ChartDataPoint[] =>
+const buildChartData = (
+  current: CampaignRecord[],
+  previous: CampaignRecord[]
+): ChartDataPoint[] =>
   current.map((campaign, index) => {
     const compareCampaign = previous[index];
     const previousResults = compareCampaign?.results ?? 0;
@@ -48,24 +70,34 @@ const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
 
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
-        <p className="mb-3 text-sm font-semibold text-slate-900">{data.fullName}</p>
+        <p className="mb-3 text-sm font-semibold text-slate-900">
+          {data.fullName}
+        </p>
         <div className="space-y-2 text-sm">
           <div className="flex items-center justify-between">
             <span className="text-teal-600">Current period</span>
-            <span className="font-semibold">{formatNumber(data.currentResults)}</span>
+            <span className="font-semibold">
+              {formatNumber(data.currentResults)}
+            </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-slate-500">Previous period</span>
-            <span className="font-medium">{formatNumber(data.previousResults)}</span>
+            <span className="font-medium">
+              {formatNumber(data.previousResults)}
+            </span>
           </div>
           <div className="flex items-center justify-between border-t pt-2">
             <span className="text-slate-600">Growth</span>
             <span
               className={`font-semibold ${
-                growth > 0 ? 'text-emerald-600' : growth < 0 ? 'text-rose-600' : 'text-slate-600'
+                growth > 0
+                  ? "text-emerald-600"
+                  : growth < 0
+                  ? "text-rose-600"
+                  : "text-slate-600"
               }`}
             >
-              {growth > 0 ? '+' : ''}
+              {growth > 0 ? "+" : ""}
               {growth.toFixed(1)}%
             </span>
           </div>
@@ -76,7 +108,11 @@ const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
   return null;
 };
 
-const ResultsChart = ({ startMonth, compareMonth, monthlyData }: ResultsChartProps) => {
+const ResultsChart = ({
+  startMonth,
+  compareMonth,
+  monthlyData,
+}: ResultsChartProps) => {
   if (!startMonth || !compareMonth || !monthlyData) {
     return (
       <div className={analyticsCardSkeletonClasses}>
@@ -91,7 +127,11 @@ const ResultsChart = ({ startMonth, compareMonth, monthlyData }: ResultsChartPro
 
   const chartData = buildChartData(startData, compareData);
   const maxValue = chartData.length
-    ? Math.max(...chartData.map((item) => Math.max(item.currentResults, item.previousResults)))
+    ? Math.max(
+        ...chartData.map((item) =>
+          Math.max(item.currentResults, item.previousResults)
+        )
+      )
     : 0;
   const yDomainMax = maxValue > 0 ? maxValue * 1.1 : 1;
 
@@ -103,13 +143,17 @@ const ResultsChart = ({ startMonth, compareMonth, monthlyData }: ResultsChartPro
             <TrendingUp className="h-5 w-5" />
           </span>
           <div>
-            <h3 className="text-base font-semibold text-slate-900">Campaign Results Comparison</h3>
-            <p className="text-sm text-slate-500">Visualize performance movement per campaign.</p>
+            <h3 className="text-base font-semibold text-slate-900">
+              Campaign Results Comparison
+            </h3>
+            <p className="text-sm text-slate-500">
+              Visualize performance movement per campaign.
+            </p>
           </div>
         </div>
         <div className={chartLegendClasses}>
           <span className="inline-flex items-center gap-2">
-            <span className={`${chartLegendDotClass} bg-teal-500`} />
+            <span className={`${chartLegendDotClass} bg-[#0ea5e9]`} />
             Current
           </span>
           <span className="inline-flex items-center gap-2">
@@ -121,7 +165,10 @@ const ResultsChart = ({ startMonth, compareMonth, monthlyData }: ResultsChartPro
 
       <div className={chartHeightClass}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} margin={{ top: 10, right: 16, left: 0, bottom: 90 }}>
+          <BarChart
+            data={chartData}
+            margin={{ top: 10, right: 16, left: 0, bottom: 90 }}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
             <XAxis
               dataKey="name"
@@ -138,9 +185,22 @@ const ResultsChart = ({ startMonth, compareMonth, monthlyData }: ResultsChartPro
               domain={[0, yDomainMax]}
               tickFormatter={(value) => formatNumber(Number(value))}
             />
-            <Tooltip content={<CustomTooltip />} wrapperStyle={{ outline: 'none' }} />
-            <Bar dataKey="currentResults" fill="#0ea5e9" radius={[4, 4, 0, 0]} name="Current period" />
-            <Bar dataKey="previousResults" fill="#cbd5f5" radius={[4, 4, 0, 0]} name="Previous period" />
+            <Tooltip
+              content={<CustomTooltip />}
+              wrapperStyle={{ outline: "none" }}
+            />
+            <Bar
+              dataKey="currentResults"
+              fill="#0ea5e9"
+              radius={[4, 4, 0, 0]}
+              name="Current period"
+            />
+            <Bar
+              dataKey="previousResults"
+              fill="#cbd5f5"
+              radius={[4, 4, 0, 0]}
+              name="Previous period"
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -149,4 +209,3 @@ const ResultsChart = ({ startMonth, compareMonth, monthlyData }: ResultsChartPro
 };
 
 export default ResultsChart;
-
