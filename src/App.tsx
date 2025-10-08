@@ -30,6 +30,7 @@ import {
   LogOut,
   Menu,
   X,
+  Package,
 } from "lucide-react";
 import "./globals.css";
 
@@ -69,6 +70,13 @@ const tabs = [
     color: "violet",
     path: "settings",
   },
+  {
+    id: "orders",
+    name: "Orders",
+    icon: Package,
+    color: "red",
+    path: "orders",
+  },
 ] as const;
 
 type TabDefinition = (typeof tabs)[number];
@@ -80,6 +88,7 @@ const tabGradients: Record<AccentColor, string> = {
   teal: "from-teal-500 via-teal-600 to-teal-700",
   coral: "from-coral-500 via-coral-600 to-coral-700",
   emerald: "from-emerald-500 via-emerald-600 to-emerald-700",
+  red: "from-red-500 via-red-600 to-red-700",
 };
 
 const tabSoftBackground: Record<AccentColor, string> = {
@@ -87,6 +96,7 @@ const tabSoftBackground: Record<AccentColor, string> = {
   teal: "hover:bg-teal-500/10 dark:hover:bg-teal-500/20",
   coral: "hover:bg-coral-500/10 dark:hover:bg-coral-500/20",
   emerald: "hover:bg-emerald-500/10 dark:hover:bg-emerald-500/20",
+  red: "hover:bg-red-500/10 dark:hover:bg-red-500/20",
 };
 
 function ResponsiveSidebar({

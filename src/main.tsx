@@ -9,37 +9,46 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "react-hot-toast";
 import {
   createBrowserRouter,
-  createRoutesFromElements,
   RouterProvider,
-  Route,
   Navigate,
 } from "react-router-dom";
 import { LoginPage } from "./pages/auth/LoginPage";
 import PublicRouter, { RootRedirect } from "./routers/PublicRouter";
+import { ordersRoutes } from "@/features/orders";
 
 const queryClient = new QueryClient();
 
-const router = createBrowserRouter(
-  createRoutesFromElements(
-    <Route path="/" element={<ProvidersRoute />}>
-      <Route element={<PublicRouter />}>
-        <Route index element={<RootRedirect />} />
-        <Route path="app" element={<App />}>
-          <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<DashboardHome />} />
-          <Route path="analytics" element={<AnalyticsRoute />} />
-          <Route path="calendar" element={<CalendarPage />} />
-          <Route path="clients" element={<ClientsPage />} />
-          <Route
-            path="settings"
-            element={<UnderConstruction section="settings" />}
-          />
-        </Route>
-        <Route path="login" element={<LoginPage />} />
-      </Route>
-    </Route>
-  )
-);
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <ProvidersRoute />,
+    children: [
+      {
+        element: <PublicRouter />,
+        children: [
+          { index: true, element: <RootRedirect /> },
+          {
+            path: "app",
+            element: <App />,
+            children: [
+              { index: true, element: <Navigate to="dashboard" replace /> },
+              { path: "dashboard", element: <DashboardHome /> },
+              { path: "analytics", element: <AnalyticsRoute /> },
+              { path: "calendar", element: <CalendarPage /> },
+              { path: "clients", element: <ClientsPage /> },
+              {
+                path: "settings",
+                element: <UnderConstruction section="settings" />,
+              },
+              ordersRoutes, // orders feature
+            ],
+          },
+          { path: "login", element: <LoginPage /> },
+        ],
+      },
+    ],
+  },
+]);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
