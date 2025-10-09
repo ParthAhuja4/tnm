@@ -119,6 +119,9 @@ const CalendarPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const role: string = JSON.parse(localStorage.getItem("user") || "null")?.role;
+  const filterClientId: string = JSON.parse(
+    localStorage.getItem("user") || "null"
+  )?.id;
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -150,7 +153,11 @@ const CalendarPage: React.FC = () => {
             }))
           : [];
 
-        setEvents(mappedEvents);
+        const filteredEvents: Event[] = mappedEvents.filter(
+          (e: any) => e.client_id === filterClientId
+        );
+
+        setEvents(filteredEvents);
       } catch (e) {
         console.log(e);
       } finally {
