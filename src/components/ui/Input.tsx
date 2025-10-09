@@ -7,11 +7,21 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   helperText?: React.ReactNode;
   startAdornment?: React.ReactNode;
   endAdornment?: React.ReactNode;
+  endAdornmentInteractive?: boolean;
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   (
-    { className, type = "text", error, helperText, startAdornment, endAdornment, ...props },
+    {
+      className,
+      type = "text",
+      error,
+      helperText,
+      startAdornment,
+      endAdornment,
+      endAdornmentInteractive = false,
+      ...props
+    },
     ref
   ) => {
     return (
@@ -35,7 +45,12 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             {...props}
           />
           {endAdornment ? (
-            <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground">
+            <span
+              className={cn(
+                "absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground",
+                endAdornmentInteractive ? "pointer-events-auto" : "pointer-events-none"
+              )}
+            >
               {endAdornment}
             </span>
           ) : null}

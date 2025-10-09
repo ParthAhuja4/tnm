@@ -8,6 +8,7 @@ import { toast } from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { Switch } from "@/components/ui/Switch";
 import {
   Card,
   CardContent,
@@ -15,7 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/Card.tsx";
-import { Rocket } from "lucide-react";
+import { Rocket, Eye, EyeOff } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -27,6 +28,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -54,7 +56,6 @@ export const LoginPage: React.FC = () => {
       setIsLoading(false);
     }
   };
-
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-teal-50 to-coral-50 dark:from-violet-950 dark:via-teal-950 dark:to-coral-950 flex items-center justify-center p-4">
@@ -93,30 +94,44 @@ export const LoginPage: React.FC = () => {
               </Label>
               <Input
                 id="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
                 {...register("password")}
                 error={errors.password?.message}
                 className="h-12 bg-white/80 dark:bg-slate-800/80 border-2 border-violet-200 dark:border-violet-800 focus:border-violet-500 dark:focus:border-violet-400 rounded-lg"
-                placeholder="password"
+                placeholder="Password"
+                endAdornment={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="flex items-center text-slate-500 hover:text-slate-700 focus:outline-none"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
+                }
+                endAdornmentInteractive
               />
             </div>
 
-            {/* Checkbox with React Hook Form integration */}
+            {/* Role toggle with React Hook Form integration */}
             <div className="space-y-2">
               <Controller
                 name="role"
                 control={control}
                 render={({ field }) => (
                   <div className="flex items-center gap-3 rounded-lg border border-violet-200 dark:border-violet-800 bg-white/80 dark:bg-slate-800/80 px-4 py-3">
-                    <input
+                    <Switch
                       id="role"
-                      type="checkbox"
                       checked={field.value === "admin"}
-                      onChange={(event) =>
-                        field.onChange(event.target.checked ? "admin" : "client")
+                      onCheckedChange={(checked) =>
+                        field.onChange(checked ? "admin" : "client")
                       }
-                      className="h-5 w-5 rounded-md border-2 border-violet-300 dark:border-violet-700 bg-white/80 dark:bg-slate-900/50 text-violet-500 accent-violet-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2"
+                      className="data-[state=checked]:bg-violet-500 data-[state=unchecked]:bg-slate-300"
                     />
                     <Label
                       htmlFor="role"

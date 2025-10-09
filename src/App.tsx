@@ -143,7 +143,7 @@ function ResponsiveSidebar({
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-white/90 text-slate-800 dark:bg-slate-950/90 dark:text-slate-100 backdrop-blur-xl border-r border-slate-200/60 dark:border-slate-800/60 shadow-2xl p-6 flex flex-col justify-between transition-transform z-40
+        className={`fixed top-0 left-0 h-screen w-64 bg-white/90 text-slate-800 dark:bg-slate-950/90 dark:text-slate-100 backdrop-blur-xl border-r border-slate-200/60 dark:border-slate-800/60 shadow-2xl p-6 flex flex-col justify-between transition-transform z-40
         ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 lg:static lg:block`}

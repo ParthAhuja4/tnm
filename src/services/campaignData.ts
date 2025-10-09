@@ -549,8 +549,10 @@ async function fetchAnalyticsData(clientId?: string): Promise<AnalyticsStore> {
 }
 
 export async function initializeCampaignData(
-  clientId?: string
+  clientId?: string,
+  options?: { force?: boolean }
 ): Promise<AnalyticsStore> {
+  const { force = false } = options ?? {};
   const normalizedClientId = clientId?.trim();
   const resolvedClientId =
     normalizedClientId && normalizedClientId.length > 0
@@ -559,11 +561,11 @@ export async function initializeCampaignData(
   const hasData = Object.keys(analyticsStore.monthlyAggregates).length > 0;
   const isSameClient = activeClientId === resolvedClientId;
 
-  if (hasData && isSameClient && !initializationPromise) {
+  if (!force && hasData && isSameClient && !initializationPromise) {
     return analyticsStore;
   }
 
-  if (!initializationPromise || !isSameClient) {
+  if (!initializationPromise || force || !isSameClient) {
     const loadPromise = fetchAnalyticsData(resolvedClientId ?? undefined)
       .then((store) => {
         analyticsStore = store;

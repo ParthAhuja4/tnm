@@ -6,17 +6,24 @@ import ReachImpressionsChart from "../../components/analytics/ReachImpressionsCh
 import ConversionFunnelChart from "../../components/analytics/ConversionFunnelChart";
 import TimelineChart from "../../components/analytics/TimelineChart";
 
-import { useState, useEffect, type ComponentType } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  type ComponentType,
+} from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import MonthSelector from "../../components/analytics/MonthSelector";
 import SummaryMetrics from "../../components/analytics/SummaryMetrics";
+import { Button } from "@/components/ui/Button";
 
 import {
   initializeCampaignData,
   getMonthlyAggregates,
   type MonthlyAggregate,
 } from "../../services/campaignData";
-import { Sparkles, BarChart3, Zap, Target } from "lucide-react";
+import { Sparkles, BarChart3, Zap, Target, RefreshCcw } from "lucide-react";
 
 const CHART_COUNT = 7;
 
@@ -52,7 +59,7 @@ const HIGHLIGHT_ITEMS: HighlightItem[] = [
 
 function AnalyticsPage() {
   const { user } = useAuth();
-  const isClient = user?.role === "client";
+  const isClient = user?.role === "Client";
   const authenticatedClientId =
     isClient && user?.id !== undefined && user?.id !== null
       ? String(user.id)
@@ -66,13 +73,12 @@ function AnalyticsPage() {
     Record<string, MonthlyAggregate>
   >({});
   const [loading, setLoading] = useState(true);
+  const isMountedRef = useRef(true);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadData = async () => {
+  const loadData = useCallback(
+    async (forceRefresh = false) => {
       if (isClient && !authenticatedClientId) {
-        if (isMounted) {
+        if (isMountedRef.current) {
           setLoading(false);
         }
         console.warn(
@@ -81,34 +87,50 @@ function AnalyticsPage() {
         return;
       }
 
-      setLoading(true);
+      if (isMountedRef.current) {
+        setLoading(true);
+      }
+
       try {
-        const store = await initializeCampaignData(authenticatedClientId);
-        if (!isMounted) return;
+        const store = await initializeCampaignData(authenticatedClientId, {
+          force: forceRefresh,
+        });
+
+        if (!isMountedRef.current) {
+          return;
+        }
 
         setMonthlyData({ ...store.monthlyAggregates });
         setStartData(store.monthlyAggregates[startMonth] ?? null);
         setCompareData(store.monthlyAggregates[compareMonth] ?? null);
       } catch (error) {
-        if (isMounted) {
-          console.error("Error loading data:", error);
-          setMonthlyData({});
-          setStartData(null);
-          setCompareData(null);
+        if (!isMountedRef.current) {
+          return;
         }
+
+        console.error("Error loading data:", error);
+        setMonthlyData({});
+        setStartData(null);
+        setCompareData(null);
       } finally {
-        if (isMounted) {
+        if (isMountedRef.current) {
           setLoading(false);
         }
       }
-    };
+    },
+    [authenticatedClientId, compareMonth, isClient, startMonth]
+  );
 
-    loadData();
-
+  useEffect(() => {
+    isMountedRef.current = true;
     return () => {
-      isMounted = false;
+      isMountedRef.current = false;
     };
-  }, [startMonth, compareMonth, authenticatedClientId, isClient]);
+  }, []);
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
 
   const handleMonthsChange = (
     newStartMonth: string,
@@ -122,6 +144,10 @@ function AnalyticsPage() {
 
     setStartData(start);
     setCompareData(compare);
+  };
+
+  const handleReloadClick = () => {
+    void loadData(true);
   };
 
   if (loading) {
@@ -232,11 +258,41 @@ function AnalyticsPage() {
       <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="space-y-12">
           <section className="space-y-6">
-            <MonthSelector
-              startMonth={startMonth}
-              compareMonth={compareMonth}
-              onMonthsChange={handleMonthsChange}
-            />
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="w-full">
+                <MonthSelector
+                  startMonth={startMonth}
+                  compareMonth={compareMonth}
+                  onMonthsChange={handleMonthsChange}
+                />
+              </div>
+              {!isClient ? (
+                <Button
+                  type="button"
+                  onClick={handleReloadClick}
+                  disabled={loading}
+                  variant="gradient"
+                  size="lg"
+                  className="w-full md:w-auto md:self-end h-12 md:h-14 gap-2.5 rounded-2xl px-7 md:px-10 text-base md:text-lg font-semibold shadow-xl ring-2 ring-violet-300/70 hover:ring-violet-200/80 disabled:opacity-80 disabled:shadow-none"
+                  aria-live="polite"
+                  aria-busy={loading}
+                >
+                  {loading ? (
+                    <>
+                      <RefreshCcw className="h-4 w-4 animate-spin" />
+                      <span>Refreshing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCcw className="h-4 w-4" />
+                      <span>Get Client Data</span>
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <span></span>
+              )}
+            </div>
 
             <div className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
               <div className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm ring-1 ring-slate-900/5">
